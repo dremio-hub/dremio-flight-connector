@@ -43,6 +43,7 @@ import org.apache.arrow.flight.Result;
 import org.apache.arrow.flight.Ticket;
 import org.apache.arrow.flight.auth.BasicServerAuthHandler;
 import org.apache.arrow.memory.BufferAllocator;
+import org.apache.arrow.vector.types.pojo.Field;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -71,6 +72,7 @@ import com.dremio.exec.store.SchemaConfig;
 import com.dremio.exec.store.StoragePlugin;
 import com.dremio.exec.store.StoragePluginRulesFactory;
 import com.dremio.exec.store.dfs.GenericCreateTableEntry;
+import com.dremio.exec.store.dfs.IcebergTableProps;
 import com.dremio.flight.AuthValidator;
 import com.dremio.flight.PropertyHelper;
 import com.dremio.flight.SslHelper;
@@ -227,7 +229,12 @@ public class FormationPlugin implements StoragePlugin, MutablePlugin {
   }
 
   @Override
-  public CreateTableEntry createNewTable(SchemaConfig schemaConfig, NamespaceKey namespaceKey, WriterOptions writerOptions, Map<String, Object> map) {
+  public void createEmptyTable(SchemaConfig schemaConfig, NamespaceKey namespaceKey, com.dremio.exec.record.BatchSchema batchSchema, WriterOptions writerOptions) {
+    createNewTable(schemaConfig, namespaceKey, null, writerOptions, null);
+  }
+
+  @Override
+  public CreateTableEntry createNewTable(SchemaConfig schemaConfig, NamespaceKey namespaceKey, IcebergTableProps icebergTableProps, WriterOptions writerOptions, Map<String, Object> map) {
     if (namespaceKey.size() != 2) {
       throw UserException.unsupportedError().message("Formation plugin currently only supports single part names.").build(logger);
     }
@@ -248,7 +255,12 @@ public class FormationPlugin implements StoragePlugin, MutablePlugin {
   }
 
   @Override
-  public void dropTable(List<String> list, SchemaConfig schemaConfig) {
+  public void dropTable(List<String> list, boolean b, SchemaConfig schemaConfig) {
+
+  }
+
+  @Override
+  public void truncateTable(NamespaceKey namespaceKey, SchemaConfig schemaConfig) {
 
   }
 
@@ -259,6 +271,21 @@ public class FormationPlugin implements StoragePlugin, MutablePlugin {
 
   @Override
   public void dropView(SchemaConfig schemaConfig, List<String> list) throws IOException {
+
+  }
+
+  @Override
+  public void addColumns(NamespaceKey namespaceKey, List<Field> list, SchemaConfig schemaConfig) {
+
+  }
+
+  @Override
+  public void dropColumn(NamespaceKey namespaceKey, String s, SchemaConfig schemaConfig) {
+
+  }
+
+  @Override
+  public void changeColumn(NamespaceKey namespaceKey, String s, Field field, SchemaConfig schemaConfig) {
 
   }
 

@@ -14,8 +14,8 @@
 # limitations under the License.
 #
 
-FROM dremio/dremio-oss:latest
+FROM dremio/dremio-oss:4.2.2
 
-COPY target/dremio-flight-connector-0.11.0-SNAPSHOT-shaded.jar /opt/dremio/jars/
+COPY target/dremio-flight-connector-0.20.0-SNAPSHOT.jar /opt/dremio/jars/
 
 ENTRYPOINT ["bin/dremio", "start-fg"]

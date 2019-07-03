@@ -46,8 +46,7 @@ import com.dremio.service.users.SystemUser;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-
-import arrow.flight.com.google.protobuf.ByteString;
+import com.google.protobuf.ByteString;
 
 public class DatasetBuilder implements DatasetHandle {
 

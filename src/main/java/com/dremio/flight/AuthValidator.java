@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.dremio.flight;
 
 import java.util.Arrays;
@@ -30,6 +31,8 @@ import org.slf4j.LoggerFactory;
 import com.dremio.exec.proto.UserBitShared;
 import com.dremio.exec.proto.UserProtos;
 import com.dremio.exec.server.SabotContext;
+import com.dremio.exec.server.options.SessionOptionManager;
+import com.dremio.exec.server.options.SessionOptionManagerFactoryImpl;
 import com.dremio.sabot.rpc.user.UserRpcUtils;
 import com.dremio.sabot.rpc.user.UserSession;
 import com.dremio.service.users.SystemUser;
@@ -95,9 +98,11 @@ public class AuthValidator implements BasicServerAuthHandler.BasicAuthValidator 
   }
 
   private UserSession build(String user, String password) {
+    SessionOptionManager optionsManager =
+      new SessionOptionManagerFactoryImpl().getOrCreate("flight-session-" + user, context.getOptionManager());
     return UserSession.Builder.newBuilder()
       .withCredentials(UserBitShared.UserCredentials.newBuilder().setUserName(user).build())
-      .withOptionManager(context.getOptionManager())
+      .withSessionOptionManager(optionsManager)
       .withUserProperties(
         UserProtos.UserProperties.newBuilder().addProperties(
           UserProtos.Property.newBuilder().setKey("password").setValue(password).build()

@@ -22,7 +22,7 @@
 
   <groupId>com.dremio.flight</groupId>
   <artifactId>dremio-flight-connector</artifactId>
-  <version>0.14.0-SNAPSHOT</version>
+  <version>0.20.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <!--
     Weirdly putting 1.0.0 here doesn't resolve the correct dependencies for dremio jars
@@ -34,25 +34,24 @@
 
   <properties>
 
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
     <!--
         Dependencies version for this module
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         Submodules should rely on dependencixesManagement as much as possible
     -->
-    <arrow.flight.version>0.15.1</arrow.flight.version>
-    <version.dremio>4.1.4-202001240912140359-a90eb503</version.dremio>
+    <arrow.flight.version>1.0.0-20200327115344-e8784bde9c-dremio</arrow.flight.version>
+    <version.dremio>4.2.2-202004211133290458-b550b6fa</version.dremio>
     <junit.version>4.12</junit.version>
-    <lilith.version>0.9.44</lilith.version>
-    <slf4j.version>1.7.10</slf4j.version>
-    <logback.version>1.1.3</logback.version>
-    <jackson.version>2.10.2</jackson.version>
+    <lilith.version>8.2.0</lilith.version>
+    <slf4j.version>1.7.28</slf4j.version>
+    <logback.version>1.2.3</logback.version>
     <protobuf.version>3.9.1</protobuf.version>
-    <guava.version>20.0</guava.version>
-    <netty.version>4.1.38.Final</netty.version>
-    <netty.boringssl.version>2.0.25.Final</netty.boringssl.version>
-    <surefire.extra.argLine>-Ddremio.flight.ssl=true -Ddremio.flight.enabled=true -Ddremio.flight.parallel.enabled=true</surefire.extra.argLine>
+    <guava.version>28.1-jre</guava.version>
+    <netty.version>4.1.45.Final</netty.version>
+    <netty.boringssl.version>2.0.28.Final</netty.boringssl.version>
+    <surefire.extra.argLine>-Ddremio.flight.ssl=true</surefire.extra.argLine>
 
     <target.gen.source.path>${project.basedir}/target/generated-sources</target.gen.source.path>
 
@@ -151,12 +150,12 @@
                     <exclude>org.mortbay.jetty:servlet-api-2.5</exclude>
                     <exclude>org.apache.logging.log4j:log4j-slf4j-impl</exclude>
                     <exclude>log4j:*</exclude>
-<!--                    <exclude>io.netty:*:4.0-->
-<!--                    </exclude> &lt;!&ndash; exclude netty versions 4.0 and above. some of our dependencies (e.g. ES) still depend on netty 3.x which is fine as versions < 4.0 have a completely different package names &ndash;&gt;-->
+                    <exclude>io.netty:*:4.0
+                    </exclude> <!-- exclude netty versions 4.0 and above. some of our dependencies (e.g. ES) still depend on netty 3.x which is fine as versions < 4.0 have a completely different package names -->
                   </excludes>
-<!--                  <includes>-->
-<!--                    <include>io.netty:*:${netty.version}</include>-->
-<!--                  </includes>-->
+                  <includes>
+                    <include>io.netty:*:${netty.version}</include>
+                  </includes>
                 </bannedDependencies>
                 <bannedPlugins>
                   <excludes>
@@ -398,57 +397,6 @@ limitations under the License.
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-shade-plugin</artifactId>
-        <version>3.1.0</version>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-            <configuration>
-              <artifactSet>
-                <includes>
-                  <include>org.apache.arrow:arrow-flight:shaded</include>
-                  <include>com.google.flatbuffers:flatbuffers-java</include>
-                  <!--                    <include>io.grpc:*</include>-->
-                  <!--                    <include>io.netty:*</include>-->
-                  <include>io.opencensus:*</include>
-                  <include>com.google.code.gson:gson</include>
-                  <include>com.google.code.findbugs:jsr305</include>
-                  <include>com.google.code.errorprone:error_prone_annotations</include>
-                  <include>com.google.api.grpc:proto-google-common-protos</include>
-                  <include>com.google.protobuf:protobuf-java</include>
-                </includes>
-                <excludes>
-                  <exclude>io.netty:netty-transport-native-unix-common</exclude>
-                  <exclude>io.netty:netty-transport-native-epoll</exclude>
-                </excludes>
-              </artifactSet>
-              <relocations>
-                <relocation>
-                  <pattern>com.google.protobuf</pattern>
-                  <shadedPattern>cdap.com.google.protobuf</shadedPattern>
-                </relocation>
-                <!-- Entries to relocate netty native libraries  -->
-                <relocation>
-                  <pattern>META-INF.native.libnetty_</pattern>
-                  <shadedPattern>META-INF.native.libcdap_netty_</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>META-INF.native.netty_</pattern>
-                  <shadedPattern>META-INF.native.cdap_netty_</shadedPattern>
-                </relocation>
-
-              </relocations>
-              <shadedArtifactAttached>true</shadedArtifactAttached>
-              <shadedClassifierName>shaded</shadedClassifierName>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
     </plugins>
   </build>
 
@@ -456,52 +404,96 @@ limitations under the License.
 
     <dependency>
       <groupId>org.apache.arrow</groupId>
-<!--      <artifactId>flight-grpc</artifactId>-->
-      <artifactId>arrow-flight</artifactId>
+      <artifactId>flight-grpc</artifactId>
       <version>${arrow.flight.version}</version>
-      <classifier>shaded</classifier>
       <exclusions>
-          <exclusion>
-            <groupId>org.apache.arrow</groupId>
-            <artifactId>arrow-format</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.apache.arrow</groupId>
-            <artifactId>arrow-memory</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.apache.arrow</groupId>
-            <artifactId>arrow-vector</artifactId>
-          </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-annotations</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-databind</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.grpc</groupId>
+          <artifactId>grpc-netty</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-handler</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-transport</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-tcnative-boringssl-static</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <dependency>
+      <groupId>io.grpc</groupId>
+      <artifactId>grpc-netty</artifactId>
+      <version>1.23.0</version>
+      <exclusions>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-codec-http2</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-handler-proxy</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-core</artifactId>
-      <version>${jackson.version}</version>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-codec-http2</artifactId>
+      <version>${netty.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-annotations</artifactId>
-      <version>${jackson.version}</version>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-tcnative-boringssl-static</artifactId>
+      <version>${netty.boringssl.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-      <version>${jackson.version}</version>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-transport</artifactId>
+      <version>${netty.version}</version>
     </dependency>
-<!--    <dependency>-->
-<!--      <groupId>com.google.guava</groupId>-->
-<!--      <artifactId>guava</artifactId>-->
-<!--      <version>${guava.version}</version>-->
-<!--    </dependency>-->
-
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-handler</artifactId>
+      <version>${netty.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>${guava.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+      <version>${protobuf.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java-util</artifactId>
+      <version>${protobuf.version}</version>
+    </dependency>
 
     <dependency>
       <groupId>com.dremio.sabot</groupId>
       <artifactId>dremio-sabot-kernel</artifactId>
       <version>${version.dremio}</version>
-      <scope>provided</scope>
+      <!--      <scope>provided</scope>-->
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
@@ -530,7 +522,7 @@ limitations under the License.
       <groupId>com.dremio</groupId>
       <artifactId>dremio-dac-backend</artifactId>
       <version>${version.dremio}</version>
-      <scope>provided</scope>
+      <!--      <scope>provided</scope>-->
     </dependency>
 
     <!-- Test Dependencies -->

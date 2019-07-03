@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.dremio.flight;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -28,7 +28,6 @@ import javax.inject.Provider;
 import org.apache.arrow.flight.Action;
 import org.apache.arrow.flight.ActionType;
 import org.apache.arrow.flight.Criteria;
-import org.apache.arrow.flight.FlightClient;
 import org.apache.arrow.flight.FlightDescriptor;
 import org.apache.arrow.flight.FlightEndpoint;
 import org.apache.arrow.flight.FlightInfo;
@@ -84,9 +83,7 @@ import com.dremio.exec.work.protector.UserResponseHandler;
 import com.dremio.exec.work.protector.UserResult;
 import com.dremio.exec.work.protector.UserWorker;
 import com.dremio.flight.formation.FormationPlugin;
-import com.dremio.sabot.rpc.user.UserSession;
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.protobuf.InvalidProtocolBufferException;
 
@@ -334,7 +331,7 @@ class Producer implements FlightProducer, AutoCloseable {
       }
     }
 
-    @Override
+//    @Override
     public void planParallelized(PlanningSet planningSet) {
       logger.debug("plan parallel called, collecting endpoints");
       List<FlightEndpoint> endpoints = Lists.newArrayList();
