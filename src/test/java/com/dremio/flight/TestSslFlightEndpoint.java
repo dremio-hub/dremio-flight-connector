@@ -16,10 +16,14 @@
 package com.dremio.flight;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.net.InetAddress;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
@@ -68,7 +72,7 @@ import io.protostuff.LinkedBuffer;
  */
 public class TestSslFlightEndpoint extends BaseTestQuery {
 
-  private static InitializerRegistry registry;
+  private static FlightInitializer fi;
   private static final LinkedBuffer buffer = LinkedBuffer.allocate();
   private static final ExecutorService tp = Executors.newFixedThreadPool(4);
   private static final Logger logger = LoggerFactory.getLogger(TestSslFlightEndpoint.class);
@@ -80,6 +84,7 @@ public class TestSslFlightEndpoint extends BaseTestQuery {
   @BeforeClass
   public static void init() throws Exception {
     System.setProperty("dremio.flight.use-ssl", "true");
+    System.setProperty("dremio.flight.enabled", "true");
     dremioConfig = DremioConfig.create()
       .withValue(
         DremioConfig.WEB_SSL_PREFIX + DremioConfig.SSL_ENABLED,
@@ -90,18 +95,19 @@ public class TestSslFlightEndpoint extends BaseTestQuery {
       .withValue(
         DremioConfig.LOCAL_WRITE_PATH_STRING, tempFolder.getRoot().getAbsolutePath());
     getBindingCreator().bind(DremioConfig.class, dremioConfig);
-    registry = new InitializerRegistry(ExecTest.CLASSPATH_SCAN_RESULT, getBindingProvider());
-    registry.start();
+    fi = new FlightInitializer();
+    fi.initialize(getBindingProvider());
   }
 
   @AfterClass
   public static void shutdown() throws Exception {
-    registry.close();
+    fi.close();
   }
 
   private static InputStream certs() throws GeneralSecurityException, IOException {
+    InetAddress ip = InetAddress.getLocalHost();
     final SSLConfigurator configurator = new SSLConfigurator(dremioConfig, DremioConfig.WEB_SSL_PREFIX, "web");
-    final Optional<SSLConfig> sslConfigOption = configurator.getSSLConfig(true, "localhost");
+    final Optional<SSLConfig> sslConfigOption = configurator.getSSLConfig(true, ip.getHostName());
     Preconditions.checkState(sslConfigOption.isPresent()); // caller's responsibility
     final SSLConfig sslConfig = sslConfigOption.get();
     KeyStore trustStore = null;
@@ -121,7 +127,18 @@ public class TestSslFlightEndpoint extends BaseTestQuery {
       // as we want to use that certificate
       certs.add(trustStore.getCertificate(alias));
     }
+    toFile(certs);
     return certsToStream(certs);
+  }
+
+  private static void toFile(List<Certificate> certificates) throws IOException {
+    File root = tempFolder.getRoot();
+    Path certFile = Paths.get(root.getAbsolutePath(), "certs.pem");
+    JcaPEMWriter writer = new JcaPEMWriter(new FileWriter(certFile.toFile()));
+    for (final Certificate c : certificates) {
+      writer.writeObject(c);
+    }
+    writer.close();
   }
 
   private static InputStream certsToStream(List<Certificate> certs) throws IOException {
@@ -153,7 +170,9 @@ public class TestSslFlightEndpoint extends BaseTestQuery {
 
   @Test
   public void connect() throws Exception {
-    Location location = Location.forGrpcTls("localhost", 47470);
+    certs();
+    InetAddress ip = InetAddress.getLocalHost();
+    Location location = Location.forGrpcTls(ip.getHostName(), 47470);
     try (FlightClient c = flightClient(getAllocator(), location)) {
       c.authenticate(new BasicClientAuthHandler(SystemUser.SYSTEM_USERNAME, null));
       String sql = "select * from sys.options";

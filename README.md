@@ -10,6 +10,17 @@
 
 ## Configuration
 
+### Enable Flight
+
+* the property `-Ddremio.flight.enable=true` *MUST* be set to enable flight
+* the property `-Ddremio.flight.parallel.enable=true` *MUST* be set on all executors to enable parallel flight
+
+### Parallel Flight
+The parallel flight stream is now working in Dremio. However this requires a patched dremio-oss to work correctly. This allows executors to stream
+results directly to the python/spark connector in parallel. See: [Spark Connector](https://github.com/rymurr/flight-spark-source). This results in an
+approximate linear performance increase over serial Flight (with properly configured parallelization)
+
+
 ### SSL
 * ensure you have ssl set up in your `dremio.conf`. This plugin currently uses the same certificates as the webserver.
 * set property `-Ddremio.flight.use-ssl=true`
