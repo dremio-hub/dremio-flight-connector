@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 
-    Copyright (C) 2017-2018 Dremio Corporation
+    Copyright (C) 2017-2019 Dremio Corporation
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -26,8 +26,13 @@
     <version>3.4.0-SNAPSHOT</version>
   </parent>
 
+  <groupId>com.dremio.flight</groupId>
   <artifactId>dremio-flight-connector</artifactId>
-  <version>1.0.0</version>
+  <version>3.4.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <!--
+    Weirdly putting 1.0.0 here doesn't resolve the correct dependencies for dremio jars
+  -->
 
   <name>Dremio - Flight Connector</name>
   <description>Access Dremio using Arrow Flight</description>
@@ -51,63 +56,10 @@
     <proto.cas.path>${project.basedir}/src/main/protobuf/</proto.cas.path>
   </properties>
 
-
-  <dependencies>
-
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>20.0</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.arrow</groupId>
-      <artifactId>arrow-flight</artifactId>
-      <version>${arrow.version}</version>
-    </dependency>
-    <!-- Test Dependencies -->
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <!-- Mockito needs to be on the class path after JUnit (or Hamcrest)
-        as long as Mockito _contains_ older Hamcrest classes. -->
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>jul-to-slf4j</artifactId>
-      <scope>runtime</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>jcl-over-slf4j</artifactId>
-      <scope>runtime</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>log4j-over-slf4j</artifactId>
-      <scope>runtime</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-to-slf4j</artifactId>
-      <scope>runtime</scope>
-    </dependency>
-    <dependency>
-      <groupId>ch.qos.logback</groupId>
-      <artifactId>logback-classic</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>de.huxhorn.lilith</groupId>
-      <artifactId>de.huxhorn.lilith.logback.appender.multiplex-classic</artifactId>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
+  <modules>
+    <module>plugin</module>
+    <module>command</module>
+  </modules>
 
   <repositories>
     <repository>
