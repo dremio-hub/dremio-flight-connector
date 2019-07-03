@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import com.dremio.exec.proto.UserBitShared;
 import com.dremio.exec.proto.UserProtos;
 import com.dremio.exec.server.SabotContext;
+import com.dremio.sabot.rpc.user.UserRpcUtils;
 import com.dremio.sabot.rpc.user.UserSession;
 import com.dremio.service.users.SystemUser;
 import com.dremio.service.users.UserLoginException;
@@ -41,19 +42,25 @@ import com.dremio.service.users.UserService;
 public class AuthValidator implements BasicServerAuthHandler.BasicAuthValidator {
   private static final Logger logger = LoggerFactory.getLogger(AuthValidator.class);
   private final Map<ByteArrayWrapper, UserSession> sessions = new HashMap<>();
+  private final Map<ByteArrayWrapper, String> passwords = new HashMap<>();
+  private final Map<ByteArrayWrapper, FlightSessionOptions> options = new HashMap<>();
   private final Map<String, ByteArrayWrapper> tokens = new HashMap<>();
-  private final Provider<UserService> userService;
-  private final Provider<SabotContext> context;
+  private final UserService userService;
+  private final SabotContext context;
 
   public AuthValidator(Provider<UserService> userService, Provider<SabotContext> context) {
+    this.userService = userService.get();
+    this.context = context.get();
+  }
+
+  public AuthValidator(UserService userService, SabotContext context) {
     this.userService = userService;
     this.context = context;
   }
 
+
   @Override
   public byte[] getToken(String user, String password) throws Exception {
-//    UserSession.Builder.newBuilder()
-    UserService userService = this.userService.get();
     try {
       if (userService != null) {
         userService.authenticate(user, password);
@@ -64,6 +71,8 @@ public class AuthValidator implements BasicServerAuthHandler.BasicAuthValidator 
       }
       byte[] b = (user + ":" + password).getBytes();
       sessions.put(new ByteArrayWrapper(b), build(user, password));
+      passwords.put(new ByteArrayWrapper(b), password);
+      options.put(new ByteArrayWrapper(b), new FlightSessionOptions());
       tokens.put(user, new ByteArrayWrapper(b));
       logger.info("authenticated {}", user);
       return b;
@@ -75,22 +84,51 @@ public class AuthValidator implements BasicServerAuthHandler.BasicAuthValidator 
 
   @Override
   public Optional<String> isValid(byte[] bytes) {
-    String user = sessions.get(new ByteArrayWrapper(bytes)).getCredentials().getUserName();
+    logger.warn("Sessions: " + sessions.keySet().size() + " with entries " + sessions.keySet());
+    logger.warn("asking for " + new ByteArrayWrapper(bytes) + " it is " + ((sessions.containsKey(new ByteArrayWrapper(bytes))) ? "in" : "not in") + " the session set");
+    UserSession session = sessions.get(new ByteArrayWrapper(bytes));
+    String user = null;
+    if (session != null) {
+      user = session.getCredentials().getUserName();
+    }
     return Optional.ofNullable(user);
   }
 
   private UserSession build(String user, String password) {
     return UserSession.Builder.newBuilder()
       .withCredentials(UserBitShared.UserCredentials.newBuilder().setUserName(user).build())
+      .withOptionManager(context.getOptionManager())
       .withUserProperties(
         UserProtos.UserProperties.newBuilder().addProperties(
           UserProtos.Property.newBuilder().setKey("password").setValue(password).build()
         ).build())
-      .withOptionManager(context.get().getOptionManager()).build();
+      .withClientInfos(UserRpcUtils.getRpcEndpointInfos("Dremio Flight Client"))
+      .setSupportComplexTypes(true)
+      .build();
   }
 
   public UserSession getUserSession(FlightProducer.CallContext callContext) {
     return sessions.get(tokens.get(callContext.peerIdentity()));
+  }
+
+  public String getUserPassword(FlightProducer.CallContext callContext) {
+    return passwords.get(tokens.get(callContext.peerIdentity()));
+  }
+
+  public FlightSessionOptions getSessionOptions(FlightProducer.CallContext callContext) {
+    return options.get(tokens.get(callContext.peerIdentity()));
+  }
+
+  public static class FlightSessionOptions {
+    private boolean isParallel;
+
+    public boolean isParallel() {
+      return isParallel;
+    }
+
+    public void setParallel(boolean parallel) {
+      isParallel = parallel;
+    }
   }
 
   /**

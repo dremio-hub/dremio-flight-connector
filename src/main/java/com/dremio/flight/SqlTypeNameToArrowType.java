@@ -19,6 +19,7 @@ import org.apache.arrow.vector.types.DateUnit;
 import org.apache.arrow.vector.types.FloatingPointPrecision;
 import org.apache.arrow.vector.types.IntervalUnit;
 import org.apache.arrow.vector.types.TimeUnit;
+import org.apache.arrow.vector.types.UnionMode;
 import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.ArrowType.Binary;
 import org.apache.arrow.vector.types.pojo.ArrowType.Bool;
@@ -48,11 +49,9 @@ public class SqlTypeNameToArrowType {
       case "NULL":
         return new Null();
       case "MAP":
-        throw new UnsupportedOperationException("have not implemented map");
-        //return new Struct(); //todo inner type?
+        return new ArrowType.Map(false); //todo inner type?
       case "ARRAY":
-        throw new UnsupportedOperationException("have not implemented array");
-        //return new List(); //todo inner type?
+        return new ArrowType.List(); //todo inner type?
       case "UNION":
         throw new UnsupportedOperationException("have not implemented unions");
         //return new Union(); //todo inner type?
@@ -87,7 +86,7 @@ public class SqlTypeNameToArrowType {
       case "INTERVAL YEAR TO MONTH":
         return new Interval(IntervalUnit.YEAR_MONTH);
       case "BINARY":
-        throw new UnsupportedOperationException("have not implemented binary fixed size");
+        return new ArrowType.FixedSizeBinary(50);
       default:
         throw new IllegalStateException("unable to find arrow type for " + typeName);
     }

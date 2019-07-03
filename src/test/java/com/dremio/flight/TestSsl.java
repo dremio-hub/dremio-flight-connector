@@ -50,9 +50,7 @@ public class TestSsl {
 
   @Test
   public void sslTest() throws Exception {
-    FlightInitializer xxx = new FlightInitializer();
-
-    Pair<InputStream, InputStream> pair = xxx.ssl(dremioConfig, "localhost");
+    Pair<InputStream, InputStream> pair = SslHelper.ssl(dremioConfig, "localhost");
 
     SslContextBuilder builder = SslContextBuilder.forServer(pair.getRight(), pair.getLeft());
     SslContext context = builder.build();
