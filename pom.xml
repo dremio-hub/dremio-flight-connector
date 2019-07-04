@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 
-    Copyright (C) 2017-2019 Dremio Corporation
+    Copyright (C) 2017-2018 Dremio Corporation
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -65,6 +65,10 @@
     <repository>
       <id>dremio-public</id>
       <url>http://maven.dremio.com/public/</url>
+    </repository>
+    <repository>
+      <id>dremio-free</id>
+      <url>http://maven.dremio.com/free/</url>
     </repository>
   </repositories>
 </project>
