@@ -16,7 +16,6 @@
 package com.dremio.flight;
 
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -36,7 +35,6 @@ import org.apache.arrow.flight.FlightStream;
 import org.apache.arrow.flight.Location;
 import org.apache.arrow.flight.Result;
 import org.apache.arrow.flight.Ticket;
-import org.apache.arrow.flight.impl.Flight.PutResult;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
@@ -50,7 +48,6 @@ import org.slf4j.LoggerFactory;
 import com.dremio.common.exceptions.UserRemoteException;
 import com.dremio.common.utils.protos.ExternalIdHelper;
 import com.dremio.common.utils.protos.QueryWritableBatch;
-import com.dremio.datastore.KVStore;
 import com.dremio.exec.proto.GeneralRPCProtos.Ack;
 import com.dremio.exec.proto.UserBitShared;
 import com.dremio.exec.proto.UserBitShared.QueryResult.QueryState;
@@ -75,36 +72,32 @@ import com.dremio.exec.work.protector.UserRequest;
 import com.dremio.exec.work.protector.UserResponseHandler;
 import com.dremio.exec.work.protector.UserResult;
 import com.dremio.exec.work.protector.UserWorker;
-import com.dremio.flight.formation.FlightStoreCreator;
 import com.dremio.proto.flight.commands.Command;
 import com.dremio.sabot.rpc.user.UserSession;
-import com.google.common.base.Joiner;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import io.grpc.Status;
 import io.netty.buffer.ArrowBuf;
+import io.netty.buffer.ByteBufUtil;
 import io.protostuff.ProtostuffIOUtil;
 
 class Producer implements FlightProducer, AutoCloseable {
-  private static final Joiner JOINER = Joiner.on(":");
   private static final Logger logger = LoggerFactory.getLogger(Producer.class);
   private final Location location;
   private final Provider<UserWorker> worker;
   private final Provider<SabotContext> context;
   private final BufferAllocator allocator;
   private final AuthValidator validator;
-  private final KVStore<FlightStoreCreator.NodeKey, FlightStoreCreator.NodeKey> kvStore;
 
-  public Producer(Location location, Provider<UserWorker> worker, Provider<SabotContext> context, BufferAllocator allocator, AuthValidator validator) {
+  Producer(Location location, Provider<UserWorker> worker, Provider<SabotContext> context, BufferAllocator allocator, AuthValidator validator) {
     super();
     this.location = location;
     this.worker = worker;
     this.context = context;
     this.allocator = allocator;
     this.validator = validator;
-    kvStore = context.get().getKVStoreProvider().getStore(FlightStoreCreator.class);
   }
 
   @Override
@@ -124,7 +117,7 @@ class Producer implements FlightProducer, AutoCloseable {
     try {
       final CreatePreparedStatementReq req =
         CreatePreparedStatementReq.newBuilder()
-          .setSqlQuery(String.format(sql))
+          .setSqlQuery(sql)
           .build();
 
       UserRequest request = new UserRequest(RpcType.CREATE_PREPARED_STATEMENT, req);
@@ -147,6 +140,11 @@ class Producer implements FlightProducer, AutoCloseable {
     } else {
       return getInfo(callContext, descriptor, cmd);
     }
+  }
+
+  @Override
+  public Runnable acceptPut(CallContext callContext, FlightStream flightStream, StreamListener<org.apache.arrow.flight.PutResult> streamListener) {
+    throw Status.UNAVAILABLE.asRuntimeException();
   }
 
   private UserBitShared.ExternalId submitWork(CallContext callContext, UserRequest request, UserResponseHandler handler) {
@@ -186,7 +184,7 @@ class Producer implements FlightProducer, AutoCloseable {
         }
         PreparedStatement statement = handle.getPreparedStatement();
         Ticket ticket = new Ticket(statement.getServerHandle().toByteArray());
-        FlightEndpoint endpoint = new FlightEndpoint(ticket, new Location[]{location});
+        FlightEndpoint endpoint = new FlightEndpoint(ticket, location);
         FlightInfo info = new FlightInfo(fromMetadata(statement.getColumnsList()), descriptor, ImmutableList.<FlightEndpoint>of(endpoint), -1L, -1L);
         return info;
       } catch (ExecutionException e) {
@@ -228,7 +226,7 @@ class Producer implements FlightProducer, AutoCloseable {
     private RecordBatchLoader loader;
     private volatile VectorSchemaRoot root;
 
-    public RetrieveData(ServerStreamListener listener) {
+    RetrieveData(ServerStreamListener listener) {
       this.listener = listener;
     }
 
@@ -243,7 +241,7 @@ class Producer implements FlightProducer, AutoCloseable {
         // consolidate
         try (ArrowBuf buf = allocator.buffer((int) result.getByteCount())) {
           Stream.of(result.getBuffers()).forEach(b -> {
-            buf.writeBytes(b);
+            buf.writeBytes(ByteBufUtil.getBytes(b));
             b.release();
           });
           loader.load(def, buf);
@@ -297,11 +295,6 @@ class Producer implements FlightProducer, AutoCloseable {
   @Override
   public void listFlights(CallContext callContext, Criteria arg0, StreamListener<FlightInfo> list) {
     list.onCompleted();
-  }
-
-  @Override
-  public Callable<PutResult> acceptPut(CallContext context, FlightStream flightStream) {
-    throw Status.UNAVAILABLE.asRuntimeException();
   }
 
 }

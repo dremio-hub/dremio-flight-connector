@@ -29,6 +29,7 @@ import org.apache.arrow.flight.FlightStream;
 import org.apache.arrow.flight.Location;
 import org.apache.arrow.memory.BufferAllocator;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -36,12 +37,8 @@ import org.slf4j.LoggerFactory;
 
 import com.dremio.BaseTestQuery;
 import com.dremio.exec.ExecTest;
-import com.dremio.exec.catalog.CatalogServiceImpl;
-import com.dremio.exec.store.CatalogService;
-import com.dremio.flight.formation.FormationConfig;
 import com.dremio.proto.flight.commands.Command;
 import com.dremio.service.InitializerRegistry;
-import com.dremio.service.namespace.source.proto.SourceConfig;
 import com.dremio.service.users.SystemUser;
 
 import io.protostuff.ByteString;
@@ -62,14 +59,6 @@ public class TestFlightEndpoint extends BaseTestQuery {
   public static void init() throws Exception {
     registry = new InitializerRegistry(ExecTest.CLASSPATH_SCAN_RESULT, getBindingProvider());
     registry.start();
-    SourceConfig c = new SourceConfig();
-    FormationConfig conf = new FormationConfig();
-    c.setConnectionConf(conf);
-    c.setName("flight");
-    c.setMetadataPolicy(CatalogService.NEVER_REFRESH_POLICY);
-    CatalogServiceImpl cserv = (CatalogServiceImpl) getBindingProvider().lookup(CatalogService.class);
-    cserv.createSourceIfMissingWithThrow(c);
-
   }
 
   @AfterClass
@@ -79,21 +68,21 @@ public class TestFlightEndpoint extends BaseTestQuery {
 
   @Test
   public void connect() throws Exception {
-    FlightClient c = FlightClient.builder().allocator(getAllocator()).location(Location.forGrpcInsecure("localhost", 47470)).build();
-    c.authenticateBasic(SystemUser.SYSTEM_USERNAME, null);
-    String sql = "select * from sys.options";
-    byte[] message = ProtostuffIOUtil.toByteArray(new Command(sql, false, false, ByteString.EMPTY), Command.getSchema(), buffer);
-    buffer.clear();
-    FlightInfo info = c.getInfo(FlightDescriptor.command(message));
-    long total = info.getEndpoints().stream()
-      .map(this::submit)
-      .map(TestFlightEndpoint::get)
-      .mapToLong(Long::longValue)
-      .sum();
+    try (FlightClient c = FlightClient.builder().allocator(getAllocator()).location(Location.forGrpcInsecure("localhost", 47470)).build()) {
+      c.authenticate(new DremioClientAuthHandler(SystemUser.SYSTEM_USERNAME, null));
+      String sql = "select * from sys.options";
+      byte[] message = ProtostuffIOUtil.toByteArray(new Command(sql, false, false, ByteString.EMPTY), Command.getSchema(), buffer);
+      buffer.clear();
+      FlightInfo info = c.getInfo(FlightDescriptor.command(message));
+      long total = info.getEndpoints().stream()
+        .map(this::submit)
+        .map(TestFlightEndpoint::get)
+        .mapToLong(Long::longValue)
+        .sum();
 
-    c.close();
-    System.out.println(total);
-
+      Assert.assertTrue(total > 1);
+      System.out.println(total);
+    }
   }
 
   private static AtomicInteger endpointsSubmitted = new AtomicInteger();
@@ -121,7 +110,7 @@ public class TestFlightEndpoint extends BaseTestQuery {
   }
 
 
-  private static class RunnableReader implements Callable<Long> {
+  private static final class RunnableReader implements Callable<Long> {
     private final BufferAllocator allocator;
     private FlightEndpoint endpoint;
 
@@ -136,7 +125,7 @@ public class TestFlightEndpoint extends BaseTestQuery {
       int readIndex = 0;
       logger.debug("starting work on flight endpoint with ticket {} to {}", new String(endpoint.getTicket().getBytes()), endpoint.getLocations().get(0).getUri());
       try (FlightClient c = FlightClient.builder().allocator(allocator).location(endpoint.getLocations().get(0)).build()) {
-        c.authenticateBasic(SystemUser.SYSTEM_USERNAME, null);
+        c.authenticate(new DremioClientAuthHandler(SystemUser.SYSTEM_USERNAME, null));
         logger.debug("trying to get stream for flight endpoint with ticket {} to {}", new String(endpoint.getTicket().getBytes()), endpoint.getLocations().get(0).getUri());
         FlightStream fs = c.getStream(endpoint.getTicket());
         logger.debug("got stream for flight endpoint with ticket {} to {}. Will now try and read", new String(endpoint.getTicket().getBytes()), endpoint.getLocations().get(0).getUri());
@@ -149,7 +138,7 @@ public class TestFlightEndpoint extends BaseTestQuery {
       } catch (InterruptedException e) {
 
       } catch (Throwable t) {
-        logger.error("WTF", t);
+        logger.error("Error in stream fetch", t);
       }
       logger.debug("got all results from stream for flight endpoint with ticket {} to {}. We read {} batches and we got {} rows back", new String(endpoint.getTicket().getBytes()), endpoint.getLocations().get(0).getUri(), ++readIndex, count);
       return count;

@@ -22,7 +22,7 @@
   <parent>
     <artifactId>dremio-flight-connector</artifactId>
     <groupId>com.dremio.flight</groupId>
-    <version>3.4.0-SNAPSHOT</version>
+    <version>3.3.5-SNAPSHOT</version>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>

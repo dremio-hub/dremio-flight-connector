@@ -23,12 +23,12 @@
   <parent>
     <groupId>com.dremio</groupId>
     <artifactId>dremio-parent</artifactId>
-    <version>3.4.0-SNAPSHOT</version>
+    <version>3.3.5-SNAPSHOT</version>
   </parent>
 
   <groupId>com.dremio.flight</groupId>
   <artifactId>dremio-flight-connector</artifactId>
-  <version>3.4.0-SNAPSHOT</version>
+  <version>3.3.5-SNAPSHOT</version>
   <packaging>pom</packaging>
   <!--
     Weirdly putting 1.0.0 here doesn't resolve the correct dependencies for dremio jars
@@ -47,7 +47,7 @@
         Dependencies version for this module
         Submodules should rely on dependenciesManagement as much as possible
     -->
-    <arrow.version>0.14.0-SNAPSHOT</arrow.version>
+    <arrow.flight.version>0.14.0-SNAPSHOT</arrow.flight.version>
 
 
     <surefire.extra.argLine></surefire.extra.argLine>

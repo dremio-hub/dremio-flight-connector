@@ -15,32 +15,90 @@
  */
 package com.dremio.flight;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 
-import org.apache.arrow.flight.auth.BasicServerAuthHandler;
+import javax.inject.Provider;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.dremio.service.users.SystemUser;
+import com.dremio.service.users.UserLoginException;
+import com.dremio.service.users.UserService;
 import com.google.common.collect.Maps;
 
-public class AuthValidator implements BasicServerAuthHandler.BasicAuthValidator {
+/**
+ * user/pass validation for dremios arrow flight endpoint
+ */
+public class AuthValidator implements DremioServerAuthHandler.DremioAuthValidator {
+  private static final Logger logger = LoggerFactory.getLogger(AuthValidator.class);
   private final Map<String, String> passwd = Maps.newHashMap();
-  private final Map<byte[], String> users = Maps.newHashMap();
+  private final Map<ByteArrayWrapper, String> users = Maps.newHashMap();
+  private final Provider<UserService> userService;
+
+  public AuthValidator(Provider<UserService> userService) {
+    this.userService = userService;
+  }
 
   @Override
-  public byte[] getToken(String s, String s1) throws Exception {
-    byte[] b = (s + ":" + s1).getBytes();
-    users.put(b, s);
-    passwd.put(s, s1);
-    return b;
+  public byte[] getToken(String user, String password) throws Exception {
+    UserService userService = this.userService.get();
+    try {
+      if (userService != null) {
+        userService.authenticate(user, password);
+      } else {
+        if (!(SystemUser.SYSTEM_USERNAME.equals(user) && "".equals(password))) {
+          throw new UserLoginException(user, "not default user");
+        }
+      }
+      byte[] b = (user + ":" + password).getBytes();
+      users.put(new ByteArrayWrapper(b), user);
+      passwd.put(user, password);
+      logger.info("authenticated {}", user);
+      return b;
+    } catch (Throwable e) {
+      logger.error("unable to authenticate {}", user);
+    }
+    return new byte[0];
   }
 
   @Override
   public Optional<String> isValid(byte[] bytes) {
-    String user = users.get(bytes);
+    String user = users.get(new ByteArrayWrapper(bytes));
     return Optional.ofNullable(user);
   }
 
-  public Optional<String> password(String user) {
+  Optional<String> password(String user) {
     return Optional.ofNullable(passwd.get(user));
+  }
+
+  /**
+   * wrapper class to make byte[] a map key
+   */
+  private static class ByteArrayWrapper {
+    private final byte[] bytes;
+
+    public ByteArrayWrapper(byte[] bytes) {
+      this.bytes = bytes;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      ByteArrayWrapper that = (ByteArrayWrapper) o;
+      return Arrays.equals(bytes, that.bytes);
+    }
+
+    @Override
+    public int hashCode() {
+      return Arrays.hashCode(bytes);
+    }
   }
 }
