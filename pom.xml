@@ -28,7 +28,7 @@
 
   <groupId>com.dremio.flight</groupId>
   <artifactId>dremio-flight-connector</artifactId>
-  <version>3.3.5-SNAPSHOT</version>
+  <version>3.2.4-201906051751050278-1bcce62</version>
   <packaging>pom</packaging>
   <!--
     Weirdly putting 1.0.0 here doesn't resolve the correct dependencies for dremio jars
