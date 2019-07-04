@@ -23,7 +23,7 @@
   <parent>
     <groupId>com.dremio</groupId>
     <artifactId>dremio-parent</artifactId>
-    <version>3.3.5-SNAPSHOT</version>
+    <version>3.2.4-201906051751050278-1bcce62</version>
   </parent>
 
   <groupId>com.dremio.flight</groupId>
