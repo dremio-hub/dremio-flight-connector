@@ -42,7 +42,7 @@
         Submodules should rely on dependenciesManagement as much as possible
     -->
     <arrow.flight.version>0.14.0</arrow.flight.version>
-    <version.dremio>3.1.1-201901281837140761-30c9d74</version.dremio>
+    <version.dremio>3.2.4-201906051751050278-1bcce62</version.dremio>
     <junit.version>4.12</junit.version>
     <lilith.version>0.9.44</lilith.version>
     <slf4j.version>1.7.10</slf4j.version>
