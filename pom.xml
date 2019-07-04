@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 
-    Copyright (C) 2017-2018 Dremio Corporation
+    Copyright (C) 2017-2019 Dremio Corporation
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -19,12 +19,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-
-  <parent>
-    <groupId>com.dremio</groupId>
-    <artifactId>dremio-parent</artifactId>
-    <version>3.2.4-201906051751050278-1bcce62</version>
-  </parent>
 
   <groupId>com.dremio.flight</groupId>
   <artifactId>dremio-flight-connector</artifactId>
@@ -48,8 +42,12 @@
         Submodules should rely on dependenciesManagement as much as possible
     -->
     <arrow.flight.version>0.14.0</arrow.flight.version>
-
-
+    <version.dremio>3.1.1-201901281837140761-30c9d74</version.dremio>
+    <junit.version>4.12</junit.version>
+    <lilith.version>0.9.44</lilith.version>
+    <slf4j.version>1.7.10</slf4j.version>
+    <logback.version>1.1.3</logback.version>
+    <protostuff.version>1.4.4</protostuff.version>
     <surefire.extra.argLine></surefire.extra.argLine>
 
     <target.gen.source.path>${project.basedir}/target/generated-sources</target.gen.source.path>
@@ -66,6 +64,321 @@
           <configLocation>plugin/src/main/checkstyle/checkstyle-config.xml</configLocation>
           <suppressionsLocation>plugin/src/main/checkstyle/checkstyle-suppressions.xml</suppressionsLocation>
         </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.0</version>
+        <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.xolstice.maven.plugins</groupId>
+        <artifactId>protobuf-maven-plugin</artifactId>
+        <version>0.5.0</version>
+        <configuration>
+          <protoSourceRoot>${basedir}/src/main/proto</protoSourceRoot>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/generated-sources/protobuf</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.19.1</version>
+        <configuration>
+          <includes>
+            <include>${hbase.TestSuite}</include>
+          </includes>
+          <systemProperties>
+            <property>
+              <name>hbase.test.root</name>
+              <value>${project.build.directory}/data</value>
+            </property>
+            <property>
+              <name>logback.log.dir</name>
+              <value>${project.build.directory}/surefire-reports</value>
+            </property>
+          </systemProperties>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy-java-sources</id>
+            <phase>process-sources</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.outputDirectory}</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.basedir}/src/main/java</directory>
+                  <includes>
+                    <include>com/dremio/exec/expr/fn/impl/**/*.java</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>avoid_bad_dependencies</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <bannedDependencies>
+                  <includes combine.children="append">
+                    <!-- Needed by HBase test cluster -->
+                    <include>javax.servlet:servlet-api:*:*:test</include>
+                    <include>commons-logging:commons-logging:*:jar:provided</include>
+                  </includes>
+                </bannedDependencies>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>com.mycila</groupId>
+        <artifactId>license-maven-plugin</artifactId>
+        <version>3.0</version>
+        <configuration>
+          <inlineHeader>
+            Copyright (C) ${project.inceptionYear} ${owner}
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+          </inlineHeader>
+          <properties>
+            <owner>Dremio Corporation</owner>
+          </properties>
+          <project>
+            <inceptionYear>2017-2019</inceptionYear>
+          </project>
+          <failIfUnknown>true</failIfUnknown>
+          <useDefaultExcludes>false</useDefaultExcludes>
+
+          <includes>
+            <include>src/**</include>
+            <include>*</include>
+          </includes>
+          <excludes>
+            <!-- default excludes (minus some items) from https://github.com/mycila/license-maven-plugin/blob/61f65ac65bfc38246a15fb84083796c5e3afb053/license-maven-plugin/src/main/java/com/mycila/maven/plugin/license/Default.java -->
+            <exclude>**/*~</exclude>
+            <exclude>**/#*#</exclude>
+            <exclude>**/.#*</exclude>
+            <exclude>**/%*%</exclude>
+            <exclude>**/._*</exclude>
+            <exclude>**/.repository/**</exclude>
+            <exclude>**/CVS</exclude>
+            <exclude>**/CVS/**</exclude>
+            <exclude>**/.cvsignore</exclude>
+            <exclude>**/RCS</exclude>
+            <exclude>**/RCS/**</exclude>
+            <exclude>**/SCCS</exclude>
+            <exclude>**/SCCS/**</exclude>
+            <exclude>**/vssver.scc</exclude>
+            <exclude>**/.svn</exclude>
+            <exclude>**/.svn/**</exclude>
+            <exclude>**/.arch-ids</exclude>
+            <exclude>**/.arch-ids/**</exclude>
+            <exclude>**/.bzr</exclude>
+            <exclude>**/.bzr/**</exclude>
+            <exclude>**/.MySCMServerInfo</exclude>
+            <exclude>**/.dotfile</exclude>
+            <exclude>**/.DS_Store</exclude>
+            <exclude>**/.metadata</exclude>
+            <exclude>**/.metadata/**</exclude>
+            <exclude>**/.hg</exclude>
+            <exclude>**/.hg/**</exclude>
+            <exclude>**/.hgignore</exclude>
+            <exclude>**/.git</exclude>
+            <exclude>**/.git/**</exclude>
+            <exclude>**/.gitignore</exclude>
+            <exclude>**/.gitmodules</exclude>
+            <exclude>**/.indexing</exclude>
+            <exclude>**/BitKeeper</exclude>
+            <exclude>**/BitKeeper/**</exclude>
+            <exclude>**/ChangeSet</exclude>
+            <exclude>**/ChangeSet/**</exclude>
+            <exclude>**/_darcs</exclude>
+            <exclude>**/_darcs/**</exclude>
+            <exclude>**/.darcsrepo</exclude>
+            <exclude>**/.darcsrepo/**</exclude>
+            <exclude>**/-darcs-backup*</exclude>
+            <exclude>**/.darcs-temp-mail</exclude>
+            <!-- <exclude>**/target/**</exclude> want this for add-license-for-java-generated-from-proto -->
+            <exclude>**/test-output/**</exclude>
+            <exclude>**/release.properties</exclude>
+            <exclude>**/dependency-reduced-pom.xml</exclude>
+            <exclude>**/release-pom.xml</exclude>
+            <exclude>**/pom.xml.releaseBackup</exclude>
+            <exclude>**/cobertura.ser</exclude>
+            <exclude>**/.clover/**</exclude>
+            <exclude>**/.classpath</exclude>
+            <exclude>**/.project</exclude>
+            <exclude>**/.settings/**</exclude>
+            <exclude>**/*.iml</exclude>
+            <exclude>**/*.ipr</exclude>
+            <exclude>**/*.iws</exclude>
+            <exclude>.idea/**</exclude>
+            <exclude>**/nb-configuration.xml</exclude>
+            <exclude>**/MANIFEST.MF</exclude>
+            <exclude>**/*.jpg</exclude>
+            <exclude>**/*.png</exclude>
+            <exclude>**/*.gif</exclude>
+            <exclude>**/*.ico</exclude>
+            <exclude>**/*.bmp</exclude>
+            <exclude>**/*.tiff</exclude>
+            <exclude>**/*.tif</exclude>
+            <exclude>**/*.cr2</exclude>
+            <exclude>**/*.xcf</exclude>
+            <exclude>**/*.class</exclude>
+            <exclude>**/*.exe</exclude>
+            <exclude>**/*.dll</exclude>
+            <exclude>**/*.so</exclude>
+            <exclude>**/*.md5</exclude>
+            <exclude>**/*.sha1</exclude>
+            <exclude>**/*.jar</exclude>
+            <exclude>**/*.zip</exclude>
+            <exclude>**/*.rar</exclude>
+            <exclude>**/*.tar</exclude>
+            <exclude>**/*.tar.gz</exclude>
+            <exclude>**/*.tar.bz2</exclude>
+            <exclude>**/*.gz</exclude>
+            <exclude>**/*.xls</exclude>
+            <exclude>**/META-INF/services/**</exclude>
+            <exclude>**/*.md</exclude>
+            <exclude>**/*.xls</exclude>
+            <exclude>**/*.doc</exclude>
+            <exclude>**/*.odt</exclude>
+            <exclude>**/*.ods</exclude>
+            <exclude>**/*.pdf</exclude>
+            <exclude>**/.travis.yml</exclude>
+            <exclude>**/*.swf</exclude>
+            <exclude>**/*.json</exclude>
+            <!-- <exclude>**/*.svg</exclude> -->
+            <exclude>**/*.eot</exclude>
+            <exclude>**/*.ttf</exclude>
+            <exclude>**/*.woff</exclude>
+            <exclude>**/*.xlsx</exclude>
+            <exclude>**/*.docx</exclude>
+            <exclude>**/*.ppt</exclude>
+            <exclude>**/*.pptx</exclude>
+            <!-- end default excludes -->
+
+            <!-- by file extension -->
+            <exclude>**/*.log</exclude>
+            <exclude>**/*.txt</exclude>
+            <exclude>**/*.csv</exclude>
+            <exclude>**/*.tsv</exclude>
+            <exclude>**/*.parquet</exclude>
+            <exclude>**/*.jks</exclude>
+            <exclude>**/*.nonformat</exclude>
+            <exclude>**/*.gzip</exclude>
+            <exclude>**/*.fbs</exclude>
+
+            <!-- by file name -->
+            <exclude>**/Jenkinsfile</exclude>
+            <exclude>**/LICENSE</exclude>
+            <exclude>**/NOTICE</exclude>
+            <exclude>**/postinstall</exclude>
+            <exclude>**/.babelrc</exclude>
+            <exclude>**/.checkstyle</exclude>
+            <exclude>**/.eslintcache</exclude>
+            <exclude>**/.eslintignore</exclude>
+            <exclude>**/.eslintrc</exclude>
+            <exclude>**/git.properties</exclude>
+            <exclude>**/pom.xml.versionsBackup</exclude>
+            <exclude>**/scheduler-core-default.xml</exclude>
+            <exclude>**/scheduler-yarn-default.xml</exclude>
+            <exclude>mvnw</exclude>
+            <exclude>mvnw.cmd</exclude>
+            <exclude>**/*.no_license</exclude>
+
+            <!-- by directory name -->
+            <exclude>**/node_modules/**</exclude>
+            <exclude>**/.idea/**</exclude>
+          </excludes>
+          <mapping>
+            <java>SLASHSTAR_STYLE</java>
+            <hql>DOUBLEDASHES_STYLE</hql>
+            <jnk>DOUBLESLASH_STYLE</jnk>
+            <stg>DOUBLESLASH_STYLE</stg>
+            <g>DOUBLESLASH_STYLE</g>
+            <proto>SLASHSTAR_STYLE</proto>
+            <less>SLASHSTAR_STYLE</less>
+            <hpp>SLASHSTAR_STYLE</hpp>
+            <cc>SLASHSTAR_STYLE</cc>
+            <tdd>SCRIPT_STYLE</tdd>
+            <command>SCRIPT_STYLE</command>
+            <fmpp>SCRIPT_STYLE</fmpp>
+            <q>DOUBLEDASHES_STYLE</q>
+            <conf>SCRIPT_STYLE</conf>
+            <jj>SLASHSTAR_STYLE</jj>
+            <dss>SCRIPT_STYLE</dss>
+            <rc>SCRIPT_STYLE</rc>
+            <service>SCRIPT_STYLE</service>
+            <svg>XML_STYLE</svg>
+            <mvnw>SCRIPT_STYLE</mvnw>
+          </mapping>
+        </configuration>
+        <executions>
+          <execution>
+            <id>default-cli</id>
+            <goals>
+              <goal>format</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>add-license-to-java-generated-from-proto</id>
+            <phase>process-sources</phase>
+            <goals>
+              <goal>format</goal>
+            </goals>
+            <configuration>
+              <includes combine.self="override">
+                <skipExistingHeaders>true</skipExistingHeaders>
+                <include>${project.build.directory}/**/*.java</include>
+              </includes>
+            </configuration>
+          </execution>
+          <execution>
+            <id>verify-license-headers</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

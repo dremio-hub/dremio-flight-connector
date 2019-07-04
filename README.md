@@ -21,12 +21,14 @@ class HttpDremioClientAuthHandler(flight.ClientAuthHandler):
     super().__init__() 
     self.username = tobytes(username)
     self.password = tobytes(password) 
+    self.token = None
 
   def authenticate(self, outgoing, incoming): 
-    pass 
+    outgoing.write(base64.b64encode(self.username + b':' + self.password))
+    self.token = incoming.read()
 
   def get_token(self): 
-    return base64.b64encode(self.username + b':' + self.password) 
+    return self.token
               
 c = flight.FlightClient.connect('grpc+tcp://<dremio coordinator host>:47470')
 c.authenticate(HttpDremioClientAuthHandler(b'dremio',b'dremio123')) 

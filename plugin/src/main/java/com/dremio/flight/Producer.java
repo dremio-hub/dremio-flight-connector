@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017-2018 Dremio Corporation
+ * Copyright (C) 2017-2019 Dremio Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -148,9 +148,9 @@ class Producer implements FlightProducer, AutoCloseable {
   }
 
   private UserBitShared.ExternalId submitWork(CallContext callContext, UserRequest request, UserResponseHandler handler) {
-    UserBitShared.ExternalId externalId = ExternalIdHelper.generateExternalId();
-    worker.get().submitWork(
-      externalId,
+//    UserBitShared.ExternalId externalId = ExternalIdHelper.generateExternalId();
+    return worker.get().submitWork(
+//      externalId,
       UserSession.Builder.newBuilder()
         .withCredentials(UserCredentials.newBuilder().setUserName(callContext.peerIdentity()).build())
         .withUserProperties(
@@ -161,7 +161,7 @@ class Producer implements FlightProducer, AutoCloseable {
       handler,
       request,
       TerminationListenerRegistry.NOOP);
-    return externalId;
+//    return externalId;
   }
 
   @Override
