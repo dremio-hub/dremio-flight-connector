@@ -56,6 +56,20 @@
     <proto.cas.path>${project.basedir}/src/main/protobuf/</proto.cas.path>
   </properties>
 
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>3.0.0</version>
+        <configuration>
+          <configLocation>plugin/src/main/checkstyle/checkstyle-config.xml</configLocation>
+          <suppressionsLocation>plugin/src/main/checkstyle/checkstyle-suppressions.xml</suppressionsLocation>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
   <modules>
     <module>plugin</module>
     <module>command</module>
