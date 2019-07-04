@@ -47,7 +47,7 @@
         Dependencies version for this module
         Submodules should rely on dependenciesManagement as much as possible
     -->
-    <arrow.flight.version>0.14.0-SNAPSHOT</arrow.flight.version>
+    <arrow.flight.version>0.14.0</arrow.flight.version>
 
 
     <surefire.extra.argLine></surefire.extra.argLine>
