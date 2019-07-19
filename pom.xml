@@ -305,6 +305,7 @@ limitations under the License.
             <exclude>**/*.nonformat</exclude>
             <exclude>**/*.gzip</exclude>
             <exclude>**/*.fbs</exclude>
+            <exclude>**/*.ipynb</exclude>
 
             <!-- by file name -->
             <exclude>**/Jenkinsfile</exclude>

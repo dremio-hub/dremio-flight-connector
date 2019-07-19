@@ -28,6 +28,10 @@
   <modelVersion>4.0.0</modelVersion>
   <artifactId>command</artifactId>
 
+  <properties>
+    <proto.cas.path>${project.basedir}/src/main/protobuf/</proto.cas.path>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>io.protostuff</groupId>
@@ -61,6 +65,23 @@
       <plugin>
         <groupId>io.protostuff</groupId>
         <artifactId>protostuff-maven-plugin</artifactId>
+        <version>1.4.4</version>
+        <dependencies>
+          <dependency>
+            <groupId>com.dremio.tools</groupId>
+            <artifactId>dremio-build-tools</artifactId>
+            <version>${version.dremio}</version>
+          </dependency>
+        </dependencies>
+        <executions>
+          <execution>
+            <id>generate-sources</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+          </execution>
+        </executions>
         <configuration>
           <protoModules>
             <protoModule>
