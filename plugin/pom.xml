@@ -45,6 +45,15 @@
                 <includes>
                   <include>org.apache.arrow:arrow-flight:shaded</include>
                   <include>com.dremio.flight:command</include>
+                  <include>com.google.flatbuffers:flatbuffers-java</include>
+                  <include>io.grpc:*</include>
+                  <include>io.netty:*</include>
+                  <include>io.opencensus:*</include>
+                  <include>com.google.code.gson:gson</include>
+                  <include>com.google.code.findbugs:jsr305</include>
+                  <include>com.google.code.errorprone:error_prone_annotations</include>
+                  <include>com.google.api.grpc:proto-google-common-protos</include>
+                  <include>com.google.protobuf:protobuf-java</include>
                 </includes>
               </artifactSet>
               <shadedArtifactAttached>true</shadedArtifactAttached>
