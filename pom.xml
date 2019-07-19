@@ -399,4 +399,14 @@ limitations under the License.
       <url>http://maven.dremio.com/free/</url>
     </repository>
   </repositories>
+  <pluginRepositories>
+    <pluginRepository>
+      <id>dremio-public</id>
+      <url>http://maven.dremio.com/public/</url>
+    </pluginRepository>
+    <pluginRepository>
+      <id>dremio-free</id>
+      <url>http://maven.dremio.com/free/</url>
+    </pluginRepository>
+  </pluginRepositories>
 </project>
