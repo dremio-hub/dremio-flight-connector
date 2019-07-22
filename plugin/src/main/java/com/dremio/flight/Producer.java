@@ -151,13 +151,7 @@ class Producer implements FlightProducer, AutoCloseable {
     UserBitShared.ExternalId externalId = ExternalIdHelper.generateExternalId();
     worker.get().submitWork(
       externalId,
-      UserSession.Builder.newBuilder()
-        .withCredentials(UserCredentials.newBuilder().setUserName(callContext.peerIdentity()).build())
-        .withUserProperties(
-          UserProtos.UserProperties.newBuilder().addProperties(
-            UserProtos.Property.newBuilder().setKey("password").setValue(validator.password(callContext.peerIdentity()).orElse("")).build()
-          ).build())
-        .withOptionManager(context.get().getOptionManager()).build(),
+      validator.getUserSession(callContext),
       handler,
       request,
       TerminationListenerRegistry.NOOP);

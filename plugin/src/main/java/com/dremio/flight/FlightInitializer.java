@@ -41,7 +41,7 @@ public class FlightInitializer implements Initializer<Void>, AutoCloseable {
   @Override
   public Void initialize(BindingProvider provider) throws Exception {
     this.allocator = provider.provider(BootStrapContext.class).get().getAllocator().newChildAllocator("arrow-flight", 0, Long.MAX_VALUE);
-    AuthValidator validator = new AuthValidator(provider.provider(UserService.class));
+    AuthValidator validator = new AuthValidator(provider.provider(UserService.class), provider.provider(SabotContext.class));
     Location location = Location.forGrpcInsecure("localhost", PORT);
     producer = new Producer(
       location,

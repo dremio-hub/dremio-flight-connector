@@ -21,9 +21,14 @@ import java.util.Optional;
 
 import javax.inject.Provider;
 
+import org.apache.arrow.flight.FlightProducer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.dremio.exec.proto.UserBitShared;
+import com.dremio.exec.proto.UserProtos;
+import com.dremio.exec.server.SabotContext;
+import com.dremio.sabot.rpc.user.UserSession;
 import com.dremio.service.users.SystemUser;
 import com.dremio.service.users.UserLoginException;
 import com.dremio.service.users.UserService;
@@ -34,16 +39,19 @@ import com.google.common.collect.Maps;
  */
 public class AuthValidator implements DremioServerAuthHandler.DremioAuthValidator {
   private static final Logger logger = LoggerFactory.getLogger(AuthValidator.class);
-  private final Map<String, String> passwd = Maps.newHashMap();
-  private final Map<ByteArrayWrapper, String> users = Maps.newHashMap();
+  private final Map<ByteArrayWrapper, UserSession> sessions = Maps.newHashMap();
+  private final Map<String, ByteArrayWrapper> tokens = Maps.newHashMap();
   private final Provider<UserService> userService;
+  private final Provider<SabotContext> context;
 
-  public AuthValidator(Provider<UserService> userService) {
+  public AuthValidator(Provider<UserService> userService, Provider<SabotContext> context) {
     this.userService = userService;
+    this.context = context;
   }
 
   @Override
   public byte[] getToken(String user, String password) throws Exception {
+//    UserSession.Builder.newBuilder()
     UserService userService = this.userService.get();
     try {
       if (userService != null) {
@@ -54,8 +62,8 @@ public class AuthValidator implements DremioServerAuthHandler.DremioAuthValidato
         }
       }
       byte[] b = (user + ":" + password).getBytes();
-      users.put(new ByteArrayWrapper(b), user);
-      passwd.put(user, password);
+      sessions.put(new ByteArrayWrapper(b), build(user, password));
+      tokens.put(user, new ByteArrayWrapper(b));
       logger.info("authenticated {}", user);
       return b;
     } catch (Throwable e) {
@@ -66,12 +74,22 @@ public class AuthValidator implements DremioServerAuthHandler.DremioAuthValidato
 
   @Override
   public Optional<String> isValid(byte[] bytes) {
-    String user = users.get(new ByteArrayWrapper(bytes));
+    String user = sessions.get(new ByteArrayWrapper(bytes)).getCredentials().getUserName();
     return Optional.ofNullable(user);
   }
 
-  Optional<String> password(String user) {
-    return Optional.ofNullable(passwd.get(user));
+  private UserSession build(String user, String password) {
+    return UserSession.Builder.newBuilder()
+      .withCredentials(UserBitShared.UserCredentials.newBuilder().setUserName(user).build())
+      .withUserProperties(
+        UserProtos.UserProperties.newBuilder().addProperties(
+          UserProtos.Property.newBuilder().setKey("password").setValue(password).build()
+        ).build())
+      .withOptionManager(context.get().getOptionManager()).build();
+  }
+
+  public UserSession getUserSession(FlightProducer.CallContext callContext) {
+    return sessions.get(tokens.get(callContext.peerIdentity()));
   }
 
   /**
