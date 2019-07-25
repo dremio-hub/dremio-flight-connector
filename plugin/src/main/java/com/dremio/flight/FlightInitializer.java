@@ -15,11 +15,14 @@
  */
 package com.dremio.flight;
 
+import javax.inject.Provider;
+
 import org.apache.arrow.flight.FlightServer;
 import org.apache.arrow.flight.Location;
 import org.apache.arrow.memory.BufferAllocator;
 
 import com.dremio.common.AutoCloseables;
+import com.dremio.dac.server.tokens.TokenManager;
 import com.dremio.exec.server.BootStrapContext;
 import com.dremio.exec.server.SabotContext;
 import com.dremio.exec.work.protector.UserWorker;
@@ -41,6 +44,7 @@ public class FlightInitializer implements Initializer<Void>, AutoCloseable {
   @Override
   public Void initialize(BindingProvider provider) throws Exception {
     this.allocator = provider.provider(BootStrapContext.class).get().getAllocator().newChildAllocator("arrow-flight", 0, Long.MAX_VALUE);
+    Provider<TokenManager> tokens = provider.provider(TokenManager.class);
     AuthValidator validator = new AuthValidator(provider.provider(UserService.class), provider.provider(SabotContext.class));
     Location location = Location.forGrpcInsecure("localhost", PORT);
     producer = new Producer(

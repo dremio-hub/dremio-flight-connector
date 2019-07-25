@@ -22,7 +22,7 @@
   <parent>
     <artifactId>dremio-flight-connector</artifactId>
     <groupId>com.dremio.flight</groupId>
-    <version>3.2.4-201906051751050278-1bcce62</version>
+    <version>3.2.8-201907180222520740-08f2b54</version>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
@@ -96,6 +96,18 @@
     <dependency>
       <groupId>com.dremio.sabot</groupId>
       <artifactId>dremio-sabot-kernel</artifactId>
+      <version>${version.dremio}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-log4j12</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <dependency>
+      <groupId>com.dremio</groupId>
+      <artifactId>dremio-dac-backend</artifactId>
       <version>${version.dremio}</version>
     </dependency>
 
