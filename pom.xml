@@ -22,7 +22,7 @@
 
   <groupId>com.dremio.flight</groupId>
   <artifactId>dremio-flight-connector</artifactId>
-  <version>3.2.8-201907180222520740-08f2b54</version>
+  <version>0.8.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <!--
     Weirdly putting 1.0.0 here doesn't resolve the correct dependencies for dremio jars
@@ -41,8 +41,9 @@
         Dependencies version for this module
         Submodules should rely on dependencixesManagement as much as possible
     -->
-    <arrow.flight.version>0.14.0</arrow.flight.version>
+    <arrow.flight.version>0.14.1</arrow.flight.version>
     <version.dremio>3.2.8-201907180222520740-08f2b54</version.dremio>
+<!--    <version.dremio>3.4.0-SNAPSHOT</version.dremio>-->
     <junit.version>4.12</junit.version>
     <lilith.version>0.9.44</lilith.version>
     <slf4j.version>1.7.10</slf4j.version>
