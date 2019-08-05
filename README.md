@@ -8,10 +8,10 @@
 1. Take the resulting .jar file in the target folder and put it in the \dremio\jars folder in Dremio
 1. Restart Dremio
 
-## Accessing Dremio via flight
+## Accessing Dremio via flight in python
 
-The Flight endpoint is exposed on port `47470`. The most recent release of pyarrow (`0.14.0`) has the flight client 
-built in. To access Dremio via Flight first install pyarrow (`conda install pyarrow -c conda-forge` or `pip install pyarrow`). Then:
+The Flight endpoint is exposed on port `47470`. The most recent release of pyarrow (`0.14.1`) has the flight client 
+built in. To access Dremio via Flight first install pyarrow (`conda install pyarrow -c conda-forge` or `pip install pyarrow`). You must also generate the python class for the Command proto `protoc -I=dremio-flight-connector/command/src/main/protobuf --python_out=. dremio-flight-connector/command/src/main/protobuf/command.proto`. Then:
 
 ```python
 from pyarrow import flight
