@@ -1,4 +1,5 @@
 language: java
+jdk: oraclejdk8
 before_install:
   - |
     pushd .. && wget https://github.com/google/protobuf/releases/download/v2.5.0/protobuf-2.5.0.tar.gz && \
