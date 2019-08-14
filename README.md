@@ -22,8 +22,8 @@ class HttpDremioClientAuthHandler(flight.ClientAuthHandler):
   
   def __init__(self, username, password): 
     super().__init__() 
-    self.username = tobytes(username)
-    self.password = tobytes(password) 
+    self.username = username
+    self.password = password
     self.token = None
 
   def authenticate(self, outgoing, incoming): 
@@ -32,9 +32,13 @@ class HttpDremioClientAuthHandler(flight.ClientAuthHandler):
 
   def get_token(self): 
     return self.token
-              
-c = flight.FlightClient.connect('grpc+tcp://<dremio coordinator host>:47470')
-c.authenticate(HttpDremioClientAuthHandler(b'dremio',b'dremio123')) 
+
+username = b'<USERNAME>'
+password = b'<PASSWORD>'
+sql = '''SELECT * FROM Elasticsearch.yelp.review'''
+
+client = flight.FlightClient.connect('grpc+tcp://<dremio_coordinator_host>:47470')
+client.authenticate(HttpDremioClientAuthHandler(b'dremio',b'dremio123')) 
 cmd = Command(query=sql, parallel=False, coalesce=False, ticket=b'')
 info = client.get_flight_info(flight.FlightDescriptor.for_command(cmd.SerializeToString()))
 reader = client.do_get(info.endpoints[0].ticket)
