@@ -38,7 +38,7 @@ password = b'<PASSWORD>'
 sql = '''<SQL_QUERY>'''
 
 client = flight.FlightClient.connect('grpc+tcp://<DREMIO_COORDINATOR_HOST>:47470')
-client.authenticate(HttpDremioClientAuthHandler(b'dremio',b'dremio123')) 
+client.authenticate(HttpDremioClientAuthHandler(username, password)) 
 cmd = Command(query=sql, parallel=False, coalesce=False, ticket=b'')
 info = client.get_flight_info(flight.FlightDescriptor.for_command(cmd.SerializeToString()))
 reader = client.do_get(info.endpoints[0].ticket)
