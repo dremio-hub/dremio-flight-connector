@@ -35,9 +35,9 @@ class HttpDremioClientAuthHandler(flight.ClientAuthHandler):
 
 username = b'<USERNAME>'
 password = b'<PASSWORD>'
-sql = '''SELECT * FROM Elasticsearch.yelp.review'''
+sql = '''<SQL_QUERY>'''
 
-client = flight.FlightClient.connect('grpc+tcp://<dremio_coordinator_host>:47470')
+client = flight.FlightClient.connect('grpc+tcp://<DREMIO_COORDINATOR_HOST>:47470')
 client.authenticate(HttpDremioClientAuthHandler(b'dremio',b'dremio123')) 
 cmd = Command(query=sql, parallel=False, coalesce=False, ticket=b'')
 info = client.get_flight_info(flight.FlightDescriptor.for_command(cmd.SerializeToString()))
