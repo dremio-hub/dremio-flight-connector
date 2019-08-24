@@ -15,6 +15,9 @@
  */
 package com.dremio.flight;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 import javax.inject.Provider;
 
 import org.apache.arrow.flight.FlightServer;
@@ -46,7 +49,7 @@ public class FlightInitializer implements Initializer<Void>, AutoCloseable {
     this.allocator = provider.provider(BootStrapContext.class).get().getAllocator().newChildAllocator("arrow-flight", 0, Long.MAX_VALUE);
     Provider<TokenManager> tokens = provider.provider(TokenManager.class);
     AuthValidator validator = new AuthValidator(provider.provider(UserService.class), provider.provider(SabotContext.class));
-    Location location = Location.forGrpcInsecure("localhost", PORT);
+    Location location = Location.forGrpcInsecure("0.0.0.0", PORT);
     producer = new Producer(
       location,
       provider.provider(UserWorker.class),

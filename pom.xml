@@ -351,6 +351,7 @@ limitations under the License.
             <service>SCRIPT_STYLE</service>
             <svg>XML_STYLE</svg>
             <mvnw>SCRIPT_STYLE</mvnw>
+            <Dockerfile>SCRIPT_STYLE</Dockerfile>
           </mapping>
         </configuration>
         <executions>
