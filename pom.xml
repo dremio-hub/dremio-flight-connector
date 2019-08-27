@@ -42,7 +42,7 @@
         Submodules should rely on dependencixesManagement as much as possible
     -->
     <arrow.flight.version>0.14.1</arrow.flight.version>
-    <version.dremio>3.3.1-201907291852280797-df23756</version.dremio>
+    <version.dremio>3.3.2-201908142136370993-d60145d</version.dremio>
     <junit.version>4.12</junit.version>
     <lilith.version>0.9.44</lilith.version>
     <slf4j.version>1.7.10</slf4j.version>
@@ -399,6 +399,14 @@ limitations under the License.
                     <include>com.google.protobuf:protobuf-java</include>
                   </includes>
                 </artifactSet>
+                <relocations>
+                  <relocation><pattern>com.google.</pattern><shadedPattern>cdap.com.google.</shadedPattern></relocation>
+                  <relocation><pattern>io.grpc.</pattern><shadedPattern>cdap.io.grpc.</shadedPattern></relocation>
+                  <!-- Entries to relocate netty native libraries  -->
+                  <relocation><pattern>META-INF.native.libnetty_</pattern><shadedPattern>META-INF.native.libcdap_netty_</shadedPattern></relocation>
+                  <relocation><pattern>META-INF.native.netty_</pattern><shadedPattern>META-INF.native.cdap_netty_</shadedPattern></relocation>
+
+                </relocations>
                 <shadedArtifactAttached>true</shadedArtifactAttached>
                 <shadedClassifierName>shaded</shadedClassifierName>
               </configuration>
@@ -420,7 +428,7 @@ limitations under the License.
       <groupId>org.apache.arrow</groupId>
       <artifactId>arrow-flight</artifactId>
       <version>${arrow.flight.version}</version>
-<!--      <classifier>shaded</classifier>-->
+      <classifier>shaded</classifier>
       <exclusions>
         <exclusion>
           <groupId>org.apache.arrow</groupId>
