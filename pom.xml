@@ -23,7 +23,7 @@
   <groupId>com.dremio.flight</groupId>
   <artifactId>dremio-flight-connector</artifactId>
   <version>0.8.0-SNAPSHOT</version>
-  <packaging>pom</packaging>
+  <packaging>jar</packaging>
   <!--
     Weirdly putting 1.0.0 here doesn't resolve the correct dependencies for dremio jars
   -->
@@ -42,20 +42,27 @@
         Submodules should rely on dependencixesManagement as much as possible
     -->
     <arrow.flight.version>0.14.1</arrow.flight.version>
-    <version.dremio>3.3.1-201907291852280797-df23756</version.dremio>
-<!--    <version.dremio>3.4.0-SNAPSHOT</version.dremio>-->
+    <version.dremio>3.3.2-201908142136370993-d60145d</version.dremio>
     <junit.version>4.12</junit.version>
     <lilith.version>0.9.44</lilith.version>
     <slf4j.version>1.7.10</slf4j.version>
     <logback.version>1.1.3</logback.version>
-    <protostuff.version>1.4.4</protostuff.version>
     <surefire.extra.argLine></surefire.extra.argLine>
 
     <target.gen.source.path>${project.basedir}/target/generated-sources</target.gen.source.path>
-    <proto.cas.path>${project.basedir}/src/main/protobuf/</proto.cas.path>
+
   </properties>
 
   <build>
+
+    <extensions>
+      <extension>
+        <groupId>kr.motd.maven</groupId>
+        <artifactId>os-maven-plugin</artifactId>
+        <version>1.5.0.Final</version>
+      </extension>
+    </extensions>
+
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -73,24 +80,6 @@
           <source>1.8</source>
           <target>1.8</target>
         </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.xolstice.maven.plugins</groupId>
-        <artifactId>protobuf-maven-plugin</artifactId>
-        <version>0.5.0</version>
-        <configuration>
-          <protoSourceRoot>${basedir}/src/main/proto</protoSourceRoot>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${project.build.directory}/generated-sources/protobuf</outputDirectory>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -114,6 +103,7 @@
       </plugin>
       <plugin>
         <artifactId>maven-resources-plugin</artifactId>
+        <version>3.1.0</version>
         <executions>
           <execution>
             <id>copy-java-sources</id>
@@ -137,6 +127,7 @@
       </plugin>
       <plugin>
         <artifactId>maven-enforcer-plugin</artifactId>
+        <version>3.0.0-M2</version>
         <executions>
           <execution>
             <id>avoid_bad_dependencies</id>
@@ -351,6 +342,7 @@ limitations under the License.
             <service>SCRIPT_STYLE</service>
             <svg>XML_STYLE</svg>
             <mvnw>SCRIPT_STYLE</mvnw>
+            <Dockerfile>SCRIPT_STYLE</Dockerfile>
           </mapping>
         </configuration>
         <executions>
@@ -382,15 +374,245 @@ limitations under the License.
           </execution>
         </executions>
       </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-shade-plugin</artifactId>
+          <version>3.1.0</version>
+          <executions>
+            <execution>
+              <phase>package</phase>
+              <goals>
+                <goal>shade</goal>
+              </goals>
+              <configuration>
+                <artifactSet>
+                  <includes>
+                    <include>org.apache.arrow:arrow-flight:shaded</include>
+                    <include>com.google.flatbuffers:flatbuffers-java</include>
+                    <include>io.grpc:*</include>
+                    <include>io.netty:*</include>
+                    <include>io.opencensus:*</include>
+                    <include>com.google.code.gson:gson</include>
+                    <include>com.google.code.findbugs:jsr305</include>
+                    <include>com.google.code.errorprone:error_prone_annotations</include>
+                    <include>com.google.api.grpc:proto-google-common-protos</include>
+                    <include>com.google.protobuf:protobuf-java</include>
+                  </includes>
+                </artifactSet>
+                <relocations>
+                  <relocation><pattern>com.google.</pattern><shadedPattern>cdap.com.google.</shadedPattern></relocation>
+                  <relocation><pattern>io.grpc.</pattern><shadedPattern>cdap.io.grpc.</shadedPattern></relocation>
+                  <!-- Entries to relocate netty native libraries  -->
+                  <relocation><pattern>META-INF.native.libnetty_</pattern><shadedPattern>META-INF.native.libcdap_netty_</shadedPattern></relocation>
+                  <relocation><pattern>META-INF.native.netty_</pattern><shadedPattern>META-INF.native.cdap_netty_</shadedPattern></relocation>
+
+                </relocations>
+                <shadedArtifactAttached>true</shadedArtifactAttached>
+                <shadedClassifierName>shaded</shadedClassifierName>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
     </plugins>
   </build>
 
-  <modules>
-    <module>plugin</module>
-    <module>command</module>
-  </modules>
+  <dependencies>
 
-  <repositories>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>20.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.arrow</groupId>
+      <artifactId>arrow-flight</artifactId>
+      <version>${arrow.flight.version}</version>
+      <classifier>shaded</classifier>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.arrow</groupId>
+          <artifactId>arrow-format</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.arrow</groupId>
+          <artifactId>arrow-memory</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.arrow</groupId>
+          <artifactId>arrow-vector</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <dependency>
+      <groupId>com.dremio.sabot</groupId>
+      <artifactId>dremio-sabot-kernel</artifactId>
+      <version>${version.dremio}</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-log4j12</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <dependency>
+      <groupId>com.dremio</groupId>
+      <artifactId>dremio-dac-backend</artifactId>
+      <version>${version.dremio}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Test Dependencies -->
+    <dependency>
+      <groupId>com.dremio.sabot</groupId>
+      <artifactId>dremio-sabot-kernel</artifactId>
+      <classifier>tests</classifier>
+      <scope>test</scope>
+      <version>${version.dremio}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-log4j12</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <dependency>
+      <groupId>com.dremio</groupId>
+      <artifactId>dremio-common</artifactId>
+      <classifier>tests</classifier>
+      <scope>test</scope>
+      <version>${version.dremio}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+      <version>${junit.version}</version>
+    </dependency>
+    <dependency>
+      <!-- Mockito needs to be on the class path after JUnit (or Hamcrest)
+        as long as Mockito _contains_ older Hamcrest classes. -->
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>1.10.19</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>jul-to-slf4j</artifactId>
+      <version>${slf4j.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>jcl-over-slf4j</artifactId>
+      <version>${slf4j.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>log4j-over-slf4j</artifactId>
+      <version>${slf4j.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-to-slf4j</artifactId>
+      <version>2.8.2</version>
+      <scope>runtime</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>${logback.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>de.huxhorn.lilith</groupId>
+      <artifactId>de.huxhorn.lilith.logback.appender.multiplex-classic</artifactId>
+      <version>${lilith.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+
+  <profiles>
+    <profile>
+      <id>mapr</id>
+      <activation>
+        <property>
+          <name>mapr</name>
+        </property>
+      </activation>
+      <properties>
+        <hive.version>2.1.1-mapr-1803-201907191218120687-4b7de39</hive.version>
+        <hbase.version>1.1.8-mapr-1710</hbase.version>
+        <hadoop.version>2.7.0-mapr-1803</hadoop.version>
+        <!-- hadoop-yarn-common jar is updated in MapR patch 6.0.1 repository, it is updated to be
+        compatible with maprfs jar from the same patch. This jar is taken from client package folder
+        from MapR's patch fix repository, v6.0.1/rpm, mapr-patch-6.0.1.20180404222005.GA-20190625140628.x86_64.rpm-->
+        <yarn.common.version>2.7.0-mapr-1803-dremio-20190717</yarn.common.version>
+        <!-- This maprfs jar is taken from MapR 6.0.1 client package directly.
+          This jar is taken from client package folder from MapR's patch fix repository,
+          v6.0.1/rpm, mapr-patch-6.0.1.20180404222005.GA-20190625140628.x86_64.rpm -->
+        <maprfs.version>6.0.1-mapr-client-dremio-20190717</maprfs.version>
+        <!-- This jar is a dependency of com.mapr.hadoop:maprfs jar.
+             For some reason it is not packaged by the assembly plugin. Include it explicitly. -->
+        <org.json.version>20080701</org.json.version>
+        <zookeeper.version>3.4.5-mapr-1710</zookeeper.version>
+        <surefire.extra.argLine>
+          -Djava.security.auth.login.config=${WORKSPACE}/oss/common/src/test/resources/maprtest/testconfig/login.conf
+          -Dzookeeper.sasl.clientconfig=Client_simple
+          -Dzookeeper.saslprovider=com.mapr.security.simplesasl.SimpleSaslProvider
+          -Dzookeeper.sasl.serverconfig=Server_simple
+          -Dzookeeper.authProvider.1=org.apache.zookeeper.server.auth.SASLAuthenticationProvider
+          -Dzookeeper.authMech=SIMPLE-SECURITY
+          -Dmapr.home.dir=${WORKSPACE}/oss/common/src/test/resources/maprtest/testconfig
+          -Ddremio.mapr.profile=true
+        </surefire.extra.argLine>
+        <dremio.mapr.distribution>mapr</dremio.mapr.distribution>
+      </properties>
+      <repositories>
+        <repository>
+          <id>mapr-releases</id>
+          <url>https://repository.mapr.com/maven/</url>
+        </repository>
+      </repositories>
+      <dependencyManagement>
+        <dependencies>
+          <dependency>
+            <groupId>com.mapr.hadoop</groupId>
+            <artifactId>maprfs</artifactId>
+            <version>${maprfs.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-yarn-common</artifactId>
+            <version>${yarn.common.version}</version>
+            <exclusions>
+              <exclusion>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-annotations</artifactId>
+              </exclusion>
+            </exclusions>
+          </dependency>
+        </dependencies>
+      </dependencyManagement>
+    </profile>
+  </profiles>
+
+   <repositories>
     <repository>
       <id>dremio-public</id>
       <url>http://maven.dremio.com/public/</url>
