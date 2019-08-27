@@ -13,9 +13,11 @@
 The Flight endpoint is exposed on port `47470`. The most recent release of pyarrow (`0.14.1`) has the flight client 
 built in. To access Dremio via Flight first install pyarrow (`conda install pyarrow -c conda-forge` or `pip install pyarrow`). Then:
 
+
 ```python
 from pyarrow import flight
 import pyarrow as pa
+import base64
 
 class HttpDremioClientAuthHandler(flight.ClientAuthHandler): 
   
@@ -25,11 +27,11 @@ class HttpDremioClientAuthHandler(flight.ClientAuthHandler):
     self.password = password
     self.token = None
 
-  def authenticate(self, outgoing, incoming): 
+  def authenticate(self, outgoing, incoming):
     outgoing.write(base64.b64encode(self.username + b':' + self.password))
     self.token = incoming.read()
 
-  def get_token(self): 
+  def get_token(self):
     return self.token
 
 username = b'<USERNAME>'
