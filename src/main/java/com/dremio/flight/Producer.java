@@ -72,7 +72,6 @@ import com.dremio.exec.work.protector.UserRequest;
 import com.dremio.exec.work.protector.UserResponseHandler;
 import com.dremio.exec.work.protector.UserResult;
 import com.dremio.exec.work.protector.UserWorker;
-import com.dremio.proto.flight.commands.Command;
 import com.dremio.sabot.rpc.user.UserSession;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
@@ -104,11 +103,7 @@ class Producer implements FlightProducer, AutoCloseable {
   public void doAction(CallContext context, Action action, StreamListener<Result> resultStreamListener) {
   }
 
-  private FlightInfo getInfo(CallContext callContext, FlightDescriptor descriptor, Command cmd) {
-    String sql = cmd.getQuery();
-    if (cmd.getParallel()) {
-      throw new UnsupportedOperationException("Parallel not enabled yet");
-    }
+  private FlightInfo getInfo(CallContext callContext, FlightDescriptor descriptor, String sql) {
     return getInfoImpl(callContext, descriptor, sql);
   }
 
@@ -133,13 +128,7 @@ class Producer implements FlightProducer, AutoCloseable {
   @Override
   public FlightInfo getFlightInfo(CallContext callContext, FlightDescriptor descriptor) {
     logger.info("called get flight info");
-    Command cmd = new Command();
-    ProtostuffIOUtil.mergeFrom(descriptor.getCommand(), cmd, Command.getSchema());
-    if (cmd.getCoalesce()) {
-      throw new UnsupportedOperationException("Coalesce not enabled yet");
-    } else {
-      return getInfo(callContext, descriptor, cmd);
-    }
+    return getInfo(callContext, descriptor, new String(descriptor.getCommand()));
   }
 
   @Override

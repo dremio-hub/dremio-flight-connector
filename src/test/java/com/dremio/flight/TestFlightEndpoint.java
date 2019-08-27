@@ -37,7 +37,6 @@ import org.slf4j.LoggerFactory;
 
 import com.dremio.BaseTestQuery;
 import com.dremio.exec.ExecTest;
-import com.dremio.proto.flight.commands.Command;
 import com.dremio.service.InitializerRegistry;
 import com.dremio.service.users.SystemUser;
 
@@ -71,9 +70,7 @@ public class TestFlightEndpoint extends BaseTestQuery {
     try (FlightClient c = FlightClient.builder().allocator(getAllocator()).location(Location.forGrpcInsecure("localhost", 47470)).build()) {
       c.authenticate(new DremioClientAuthHandler(SystemUser.SYSTEM_USERNAME, null));
       String sql = "select * from sys.options";
-      byte[] message = ProtostuffIOUtil.toByteArray(new Command(sql, false, false, ByteString.EMPTY), Command.getSchema(), buffer);
-      buffer.clear();
-      FlightInfo info = c.getInfo(FlightDescriptor.command(message));
+      FlightInfo info = c.getInfo(FlightDescriptor.command(sql.getBytes()));
       long total = info.getEndpoints().stream()
         .map(this::submit)
         .map(TestFlightEndpoint::get)
