@@ -16,6 +16,7 @@
 package com.dremio.flight;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -32,15 +33,14 @@ import com.dremio.sabot.rpc.user.UserSession;
 import com.dremio.service.users.SystemUser;
 import com.dremio.service.users.UserLoginException;
 import com.dremio.service.users.UserService;
-import com.google.common.collect.Maps;
 
 /**
  * user/pass validation for dremios arrow flight endpoint
  */
 public class AuthValidator implements DremioServerAuthHandler.DremioAuthValidator {
   private static final Logger logger = LoggerFactory.getLogger(AuthValidator.class);
-  private final Map<ByteArrayWrapper, UserSession> sessions = Maps.newHashMap();
-  private final Map<String, ByteArrayWrapper> tokens = Maps.newHashMap();
+  private final Map<ByteArrayWrapper, UserSession> sessions = new HashMap<>();
+  private final Map<String, ByteArrayWrapper> tokens = new HashMap<>();
   private final Provider<UserService> userService;
   private final Provider<SabotContext> context;
 

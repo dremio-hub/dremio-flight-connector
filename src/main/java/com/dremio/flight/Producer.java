@@ -73,8 +73,7 @@ import com.dremio.exec.work.protector.UserResponseHandler;
 import com.dremio.exec.work.protector.UserResult;
 import com.dremio.exec.work.protector.UserWorker;
 import com.dremio.sabot.rpc.user.UserSession;
-import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import io.grpc.Status;
@@ -168,12 +167,12 @@ class Producer implements FlightProducer, AutoCloseable {
         PreparedStatement statement = handle.getPreparedStatement();
         Ticket ticket = new Ticket(statement.getServerHandle().toByteArray());
         FlightEndpoint endpoint = new FlightEndpoint(ticket, location);
-        FlightInfo info = new FlightInfo(fromMetadata(statement.getColumnsList()), descriptor, ImmutableList.<FlightEndpoint>of(endpoint), -1L, -1L);
+        FlightInfo info = new FlightInfo(fromMetadata(statement.getColumnsList()), descriptor, Lists.newArrayList(endpoint), -1L, -1L);
         return info;
       } catch (ExecutionException e) {
-        throw Throwables.propagate(e.getCause());
+        throw new RuntimeException(e.getCause());
       } catch (InterruptedException e) {
-        throw Throwables.propagate(e);
+        throw new RuntimeException(e);
       }
     }
 
