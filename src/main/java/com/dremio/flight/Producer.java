@@ -259,7 +259,7 @@ class Producer implements FlightProducer, AutoCloseable {
     try {
       query = RunQuery.newBuilder()
         .setType(QueryType.PREPARED_STATEMENT)
-        .setPreparedStatementHandle(PreparedStatementHandle.PARSER.parseFrom(ticket.getBytes()))
+        .setPreparedStatementHandle(PreparedStatementHandle.parseFrom(ticket.getBytes()))
         .build();
     } catch (InvalidProtocolBufferException e) {
       throw Status.UNKNOWN.withCause(e).asRuntimeException();

@@ -400,8 +400,7 @@ limitations under the License.
                   </includes>
                 </artifactSet>
                 <relocations>
-                  <relocation><pattern>com.google.</pattern><shadedPattern>cdap.com.google.</shadedPattern></relocation>
-                  <relocation><pattern>io.grpc.</pattern><shadedPattern>cdap.io.grpc.</shadedPattern></relocation>
+                  <relocation><pattern>com.google.protobuf</pattern><shadedPattern>cdap.com.google.protobuf</shadedPattern></relocation>
                   <!-- Entries to relocate netty native libraries  -->
                   <relocation><pattern>META-INF.native.libnetty_</pattern><shadedPattern>META-INF.native.libcdap_netty_</shadedPattern></relocation>
                   <relocation><pattern>META-INF.native.netty_</pattern><shadedPattern>META-INF.native.cdap_netty_</shadedPattern></relocation>
