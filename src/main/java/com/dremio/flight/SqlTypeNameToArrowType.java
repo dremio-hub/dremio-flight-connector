@@ -23,15 +23,16 @@ import org.apache.arrow.vector.types.pojo.ArrowType;
 import org.apache.arrow.vector.types.pojo.ArrowType.Binary;
 import org.apache.arrow.vector.types.pojo.ArrowType.Bool;
 import org.apache.arrow.vector.types.pojo.ArrowType.Date;
+import org.apache.arrow.vector.types.pojo.ArrowType.Decimal;
 import org.apache.arrow.vector.types.pojo.ArrowType.FloatingPoint;
 import org.apache.arrow.vector.types.pojo.ArrowType.Int;
 import org.apache.arrow.vector.types.pojo.ArrowType.Interval;
-import org.apache.arrow.vector.types.pojo.ArrowType.List;
 import org.apache.arrow.vector.types.pojo.ArrowType.Null;
-import org.apache.arrow.vector.types.pojo.ArrowType.Struct;
 import org.apache.arrow.vector.types.pojo.ArrowType.Time;
 import org.apache.arrow.vector.types.pojo.ArrowType.Timestamp;
 import org.apache.arrow.vector.types.pojo.ArrowType.Utf8;
+
+import com.dremio.exec.proto.UserProtos;
 
 /***
  * Gets Dremio RPC-/protobuf-level data type for given SQL data type name.
@@ -41,14 +42,17 @@ import org.apache.arrow.vector.types.pojo.ArrowType.Utf8;
  */
 public class SqlTypeNameToArrowType {
 
-  public static ArrowType toArrowType(String typeName) {
+  public static ArrowType toArrowType(UserProtos.ResultColumnMetadata type) {
+    String typeName = type.getDataType();
     switch (typeName) {
       case "NULL":
         return new Null();
       case "MAP":
-        return new Struct(); //todo inner type?
+        throw new UnsupportedOperationException("have not implemented map");
+        //return new Struct(); //todo inner type?
       case "ARRAY":
-        return new List(); //todo inner type?
+        throw new UnsupportedOperationException("have not implemented array");
+        //return new List(); //todo inner type?
       case "UNION":
         throw new UnsupportedOperationException("have not implemented unions");
         //return new Union(); //todo inner type?
@@ -71,7 +75,7 @@ public class SqlTypeNameToArrowType {
       case "BOOLEAN":
         return new Bool();
       case "DECIMAL":
-        throw new UnsupportedOperationException("have not implemented decimal");
+        return new Decimal(type.getPrecision(), type.getScale());
       case "DATE":
         return new Date(DateUnit.MILLISECOND);
       case "TIME":
