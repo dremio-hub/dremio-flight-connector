@@ -45,6 +45,7 @@ import org.apache.arrow.vector.types.pojo.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.dremio.common.exceptions.UserException;
 import com.dremio.common.exceptions.UserRemoteException;
 import com.dremio.common.utils.protos.ExternalIdHelper;
 import com.dremio.common.utils.protos.QueryWritableBatch;
@@ -100,9 +101,11 @@ class Producer implements FlightProducer, AutoCloseable {
 
   @Override
   public void doAction(CallContext context, Action action, StreamListener<Result> resultStreamListener) {
+    throw Status.UNIMPLEMENTED.asRuntimeException();
   }
 
   private FlightInfo getInfo(CallContext callContext, FlightDescriptor descriptor, String sql) {
+    logger.info("GetFlightInfo called for sql {}", sql);
     return getInfoImpl(callContext, descriptor, sql);
   }
 
@@ -116,8 +119,9 @@ class Producer implements FlightProducer, AutoCloseable {
 
       UserRequest request = new UserRequest(RpcType.CREATE_PREPARED_STATEMENT, req);
       Prepare prepare = new Prepare();
-      submitWork(callContext, request, prepare);
-      return prepare.getInfo(descriptor);
+
+      UserBitShared.ExternalId externalId = submitWork(callContext, request, prepare);
+      return prepare.getInfo(descriptor, externalId);
     } catch (Exception e) {
       e.printStackTrace();
       throw new RuntimeException(e);
@@ -126,13 +130,12 @@ class Producer implements FlightProducer, AutoCloseable {
 
   @Override
   public FlightInfo getFlightInfo(CallContext callContext, FlightDescriptor descriptor) {
-    logger.info("called get flight info");
     return getInfo(callContext, descriptor, new String(descriptor.getCommand()));
   }
 
   @Override
   public Runnable acceptPut(CallContext callContext, FlightStream flightStream, StreamListener<org.apache.arrow.flight.PutResult> streamListener) {
-    throw Status.UNAVAILABLE.asRuntimeException();
+    throw Status.UNIMPLEMENTED.asRuntimeException();
   }
 
   private UserBitShared.ExternalId submitWork(CallContext callContext, UserRequest request, UserResponseHandler handler) {
@@ -143,6 +146,7 @@ class Producer implements FlightProducer, AutoCloseable {
       handler,
       request,
       TerminationListenerRegistry.NOOP);
+    logger.debug("Submitted job {} from flight for request with type {}", ExternalIdHelper.toQueryId(externalId), request.getType());
     return externalId;
   }
 
@@ -158,28 +162,34 @@ class Producer implements FlightProducer, AutoCloseable {
     public Prepare() {
     }
 
-    public FlightInfo getInfo(FlightDescriptor descriptor) {
+    public FlightInfo getInfo(FlightDescriptor descriptor, UserBitShared.ExternalId externalId) {
       try {
+        logger.debug("Waiting for prepared statement handle to return for job id {}", ExternalIdHelper.toQueryId(externalId));
         CreatePreparedStatementResp handle = future.get();
+        logger.debug("prepared statement handle for job id {} has returned", ExternalIdHelper.toQueryId(externalId));
         if (handle.getStatus() == RequestStatus.FAILED) {
-          throw Status.UNKNOWN.withDescription(handle.getError().getMessage()).withCause(UserRemoteException.create(handle.getError())).asRuntimeException();
+          logger.warn("prepared statement handle for job id " + ExternalIdHelper.toQueryId(externalId) + " has failed", UserRemoteException.create(handle.getError()));
+          throw Status.INTERNAL.withDescription(handle.getError().getMessage()).withCause(UserRemoteException.create(handle.getError())).asRuntimeException();
         }
+        logger.debug("prepared statement handle for job id {} has succeeded", ExternalIdHelper.toQueryId(externalId));
         PreparedStatement statement = handle.getPreparedStatement();
         Ticket ticket = new Ticket(statement.getServerHandle().toByteArray());
         FlightEndpoint endpoint = new FlightEndpoint(ticket, location);
-        FlightInfo info = new FlightInfo(fromMetadata(statement.getColumnsList()), descriptor, Lists.newArrayList(endpoint), -1L, -1L);
+        logger.debug("flight endpoint for job id {} has been created with ticket {}", ExternalIdHelper.toQueryId(externalId), new String(ticket.getBytes()));
+        Schema schema = fromMetadata(statement.getColumnsList());
+        FlightInfo info = new FlightInfo(schema, descriptor, Lists.newArrayList(endpoint), -1L, -1L);
+        logger.debug("flight info for job id {} has been created with schema {}", ExternalIdHelper.toQueryId(externalId), schema.toJson());
         return info;
-      } catch (ExecutionException e) {
-        throw new RuntimeException(e.getCause());
-      } catch (InterruptedException e) {
-        throw new RuntimeException(e);
+      } catch (Exception e) {
+        logger.warn("prepared statement handle for job id " + ExternalIdHelper.toQueryId(externalId) + " has failed", UserException.parseError(e).buildSilently());
+        throw Status.UNKNOWN.withCause(UserException.parseError(e).buildSilently()).asRuntimeException();
       }
     }
 
     private Schema fromMetadata(List<ResultColumnMetadata> rcmd) {
 
       Schema schema = new Schema(rcmd.stream().map(md -> {
-        ArrowType arrowType = SqlTypeNameToArrowType.toArrowType(md.getDataType());
+        ArrowType arrowType = SqlTypeNameToArrowType.toArrowType(md);
         FieldType fieldType = new FieldType(md.getIsNullable(), arrowType, null, null);
         return new Field(md.getColumnName(), fieldType, null);
       }).collect(Collectors.toList()));
@@ -188,7 +198,7 @@ class Producer implements FlightProducer, AutoCloseable {
 
     @Override
     public void sendData(RpcOutcomeListener<Ack> outcomeListener, QueryWritableBatch result) {
-      throw new IllegalStateException();
+      throw Status.UNIMPLEMENTED.asRuntimeException();
     }
 
     @Override
