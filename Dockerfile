@@ -16,6 +16,6 @@
 
 FROM dremio/dremio-oss:latest
 
-COPY target/dremio-flight-connector-0.10.0-SNAPSHOT-shaded.jar /opt/dremio/jars/
+COPY target/dremio-flight-connector-0.11.0-SNAPSHOT-shaded.jar /opt/dremio/jars/
 
 ENTRYPOINT ["bin/dremio", "start-fg"]
