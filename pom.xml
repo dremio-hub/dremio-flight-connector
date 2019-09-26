@@ -389,8 +389,8 @@ limitations under the License.
                   <includes>
                     <include>org.apache.arrow:arrow-flight:shaded</include>
                     <include>com.google.flatbuffers:flatbuffers-java</include>
-                    <include>io.grpc:*</include>
-                    <include>io.netty:*</include>
+<!--                    <include>io.grpc:*</include>-->
+<!--                    <include>io.netty:*</include>-->
                     <include>io.opencensus:*</include>
                     <include>com.google.code.gson:gson</include>
                     <include>com.google.code.findbugs:jsr305</include>
@@ -398,6 +398,10 @@ limitations under the License.
                     <include>com.google.api.grpc:proto-google-common-protos</include>
                     <include>com.google.protobuf:protobuf-java</include>
                   </includes>
+                  <excludes>
+                    <exclude>io.netty:netty-transport-native-unix-common</exclude>
+                    <exclude>io.netty:netty-transport-native-epoll</exclude>
+                  </excludes>
                 </artifactSet>
                 <relocations>
                   <relocation><pattern>com.google.protobuf</pattern><shadedPattern>cdap.com.google.protobuf</shadedPattern></relocation>
