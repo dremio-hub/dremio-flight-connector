@@ -15,53 +15,156 @@
  */
 package com.dremio.flight;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
-import javax.inject.Provider;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.cert.Certificate;
+import java.util.Enumeration;
+import java.util.Optional;
 
 import org.apache.arrow.flight.FlightServer;
 import org.apache.arrow.flight.Location;
+import org.apache.arrow.flight.auth.BasicServerAuthHandler;
 import org.apache.arrow.memory.BufferAllocator;
+import org.apache.commons.lang3.tuple.Pair;
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
+import org.bouncycastle.util.io.pem.PemObject;
 
 import com.dremio.common.AutoCloseables;
-import com.dremio.dac.server.tokens.TokenManager;
+import com.dremio.config.DremioConfig;
+import com.dremio.exec.rpc.ssl.SSLConfig;
+import com.dremio.exec.rpc.ssl.SSLConfigurator;
 import com.dremio.exec.server.BootStrapContext;
 import com.dremio.exec.server.SabotContext;
 import com.dremio.exec.work.protector.UserWorker;
 import com.dremio.service.BindingProvider;
 import com.dremio.service.Initializer;
 import com.dremio.service.users.UserService;
+import com.google.common.base.Preconditions;
 
 /**
  * Intialize a basic Flight endpoint
  */
 public class FlightInitializer implements Initializer<Void>, AutoCloseable {
 
-  private static final int PORT = 47470;
+  private static final String DEFAULT_HOST = "localhost";
+  private static final int DEFAULT_PORT = 47470;
+  private static final boolean USE_SSL = false;
+
+  private final int port;
+  private final String host;
+  private final boolean useSsl;
 
   private FlightServer server;
   private Producer producer;
   private BufferAllocator allocator;
 
+  public FlightInitializer() {
+    port = Integer.parseInt(System.getProperty("dremio.flight.port", Integer.toString(DEFAULT_PORT)));
+    host = System.getProperty("dremio.flight.host", DEFAULT_HOST);
+    useSsl = Boolean.parseBoolean(System.getProperty("dremio.flight.use-ssl", Boolean.toString(USE_SSL)));
+  }
+
   @Override
   public Void initialize(BindingProvider provider) throws Exception {
     this.allocator = provider.provider(BootStrapContext.class).get().getAllocator().newChildAllocator("arrow-flight", 0, Long.MAX_VALUE);
-    Provider<TokenManager> tokens = provider.provider(TokenManager.class);
+    Location location;
+
     AuthValidator validator = new AuthValidator(provider.provider(UserService.class), provider.provider(SabotContext.class));
-    Location location = Location.forGrpcInsecure("0.0.0.0", PORT);
+    FlightServer.Builder serverBuilder = FlightServer.builder().allocator(allocator).authHandler(new BasicServerAuthHandler(validator));
+    try {
+      if (!useSsl) {
+        throw new UnsupportedOperationException("Don't use ssl");
+      }
+      final DremioConfig config = provider.lookup(DremioConfig.class);
+      Pair<InputStream, InputStream> pair = ssl(config, host);
+      location = Location.forGrpcTls(host, port);
+      serverBuilder.useTls(pair.getRight(), pair.getLeft()).location(location);
+    } catch (Exception e) {
+      location = Location.forGrpcInsecure(host, port);
+      serverBuilder.location(location);
+    }
     producer = new Producer(
       location,
       provider.provider(UserWorker.class),
       provider.provider(SabotContext.class),
       allocator,
       validator);
-    server = FlightServer.builder().allocator(allocator).producer(producer).location(location).authHandler(new DremioServerAuthHandler(validator)).build();
+    serverBuilder.producer(producer);
+    server = serverBuilder.build();
     server.start();
     return null;
+  }
+
+  Pair<InputStream, InputStream> ssl(DremioConfig config, String hostName) throws Exception {
+    final SSLConfigurator configurator = new SSLConfigurator(config, DremioConfig.WEB_SSL_PREFIX, "web");
+    final Optional<SSLConfig> sslConfigOption = configurator.getSSLConfig(true, hostName);
+    Preconditions.checkState(sslConfigOption.isPresent()); // caller's responsibility
+    final SSLConfig sslConfig = sslConfigOption.get();
+
+    final KeyStore keyStore = KeyStore.getInstance(sslConfig.getKeyStoreType());
+    try (InputStream stream = Files.newInputStream(Paths.get(sslConfig.getKeyStorePath()))) {
+      keyStore.load(stream, sslConfig.getKeyStorePassword().toCharArray());
+    }
+
+    boolean isAliasWithPrivateKey = false;
+    Enumeration<String> es = keyStore.aliases();
+    String alias = "";
+    while (es.hasMoreElements()) {
+      alias = (String) es.nextElement();
+      // if alias refers to a private key break at that point
+      // as we want to use that certificate
+      if (isAliasWithPrivateKey = keyStore.isKeyEntry(alias)) {
+        break;
+      }
+    }
+
+    if (isAliasWithPrivateKey) {
+
+      KeyStore.PrivateKeyEntry pkEntry = (KeyStore.PrivateKeyEntry) keyStore.getEntry(alias,
+        new KeyStore.PasswordProtection(sslConfig.getKeyPassword().toCharArray()));
+
+      PrivateKey myPrivateKey = pkEntry.getPrivateKey();
+
+
+      // Load certificate chain
+      Certificate[] chain = keyStore.getCertificateChain(alias);
+      return Pair.of(keyToStream(myPrivateKey), certsToStream(chain));
+    }
+
+    return null;
+  }
+
+  private InputStream keyToStream(PrivateKey key) throws IOException {
+    final StringWriter writer = new StringWriter();
+    final JcaPEMWriter pemWriter = new JcaPEMWriter(writer);
+    pemWriter.writeObject(new PemObject("PRIVATE KEY", key.getEncoded()));
+    pemWriter.flush();
+    pemWriter.close();
+    String pemString = writer.toString();
+    return new ByteArrayInputStream(pemString.getBytes());
+  }
+
+  private InputStream certsToStream(Certificate[] certs) throws IOException {
+
+    final StringWriter writer = new StringWriter();
+    final JcaPEMWriter pemWriter = new JcaPEMWriter(writer);
+    for (Certificate cert : certs) {
+      pemWriter.writeObject(cert);
+    }
+    pemWriter.flush();
+    pemWriter.close();
+    String pemString = writer.toString();
+    return new ByteArrayInputStream(pemString.getBytes());
   }
 
   public void close() throws Exception {
     AutoCloseables.close(producer, server, allocator);
   }
+
 }

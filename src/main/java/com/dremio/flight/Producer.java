@@ -17,7 +17,6 @@ package com.dremio.flight;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -54,8 +53,6 @@ import com.dremio.exec.proto.UserBitShared;
 import com.dremio.exec.proto.UserBitShared.QueryResult.QueryState;
 import com.dremio.exec.proto.UserBitShared.QueryType;
 import com.dremio.exec.proto.UserBitShared.RecordBatchDef;
-import com.dremio.exec.proto.UserBitShared.UserCredentials;
-import com.dremio.exec.proto.UserProtos;
 import com.dremio.exec.proto.UserProtos.CreatePreparedStatementReq;
 import com.dremio.exec.proto.UserProtos.CreatePreparedStatementResp;
 import com.dremio.exec.proto.UserProtos.PreparedStatement;
@@ -73,14 +70,12 @@ import com.dremio.exec.work.protector.UserRequest;
 import com.dremio.exec.work.protector.UserResponseHandler;
 import com.dremio.exec.work.protector.UserResult;
 import com.dremio.exec.work.protector.UserWorker;
-import com.dremio.sabot.rpc.user.UserSession;
 import com.google.common.collect.Lists;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import io.grpc.Status;
 import io.netty.buffer.ArrowBuf;
 import io.netty.buffer.ByteBufUtil;
-import io.protostuff.ProtostuffIOUtil;
 
 class Producer implements FlightProducer, AutoCloseable {
   private static final Logger logger = LoggerFactory.getLogger(Producer.class);

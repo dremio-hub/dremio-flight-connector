@@ -23,6 +23,7 @@ import java.util.Optional;
 import javax.inject.Provider;
 
 import org.apache.arrow.flight.FlightProducer;
+import org.apache.arrow.flight.auth.BasicServerAuthHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +38,7 @@ import com.dremio.service.users.UserService;
 /**
  * user/pass validation for dremios arrow flight endpoint
  */
-public class AuthValidator implements DremioServerAuthHandler.DremioAuthValidator {
+public class AuthValidator implements BasicServerAuthHandler.BasicAuthValidator {
   private static final Logger logger = LoggerFactory.getLogger(AuthValidator.class);
   private final Map<ByteArrayWrapper, UserSession> sessions = new HashMap<>();
   private final Map<String, ByteArrayWrapper> tokens = new HashMap<>();
