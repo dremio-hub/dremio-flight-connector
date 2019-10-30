@@ -30,13 +30,11 @@ use the [dremio-client](https://github.com/rymurr/dremio_client) to access fligh
 ```python
 from pyarrow import flight
 import pyarrow as pa
-import base64
 
-class HttpBasicClientAuthHandler(ClientAuthHandler):
-    """An example implementation of HTTP basic authentication."""
+class HttpDremioClientAuthHandler(flight.ClientAuthHandler):
 
     def __init__(self, username, password):
-        super(HttpBasicClientAuthHandler, self).__init__()
+        super(flight.ClientAuthHandler, self).__init__()
         self.basic_auth = flight.BasicAuth(username, password)
         self.token = None
 
@@ -52,7 +50,7 @@ username = '<USERNAME>'
 password = '<PASSWORD>'
 sql = '''<SQL_QUERY>'''
 
-client = flight.FlightClient.connect('grpc+tcp://<DREMIO_COORDINATOR_HOST>:47470')
+client = flight.FlightClient('grpc+tcp://<DREMIO_COORDINATOR_HOST>:47470')
 client.authenticate(HttpDremioClientAuthHandler(username, password)) 
 info = client.get_flight_info(flight.FlightDescriptor.for_command(sql))
 reader = client.do_get(info.endpoints[0].ticket)
