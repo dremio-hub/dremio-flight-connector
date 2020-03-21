@@ -12,8 +12,8 @@
 
 ### Enable Flight
 
-* the property `-Ddremio.flight.enable=true` *MUST* be set to enable flight
-* the property `-Ddremio.flight.parallel.enable=true` *MUST* be set on all executors to enable parallel flight
+* the property `-Ddremio.flight.enabled=true` *MUST* be set to enable flight
+* the property `-Ddremio.flight.parallel.enabled=true` *MUST* be set on all executors to enable parallel flight
 
 ### Parallel Flight
 The parallel flight stream is now working in Dremio. However this requires a patched dremio-oss to work correctly. This allows executors to stream
