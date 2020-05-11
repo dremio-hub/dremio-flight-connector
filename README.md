@@ -1,5 +1,7 @@
 # Dremio Flight Connector
-
+```diff
+- This connector is still being actively developed. We don't recommend this on production.
+```
 [![Build Status](https://travis-ci.org/dremio-hub/dremio-flight-connector.svg?branch=master)](https://travis-ci.org/dremio-hub/dremio-flight-connector)
 
 ## Building and Installation
