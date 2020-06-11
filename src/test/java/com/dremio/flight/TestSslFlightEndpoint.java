@@ -57,10 +57,8 @@ import org.slf4j.LoggerFactory;
 
 import com.dremio.BaseTestQuery;
 import com.dremio.config.DremioConfig;
-import com.dremio.exec.ExecTest;
 import com.dremio.exec.rpc.ssl.SSLConfig;
 import com.dremio.exec.rpc.ssl.SSLConfigurator;
-import com.dremio.service.InitializerRegistry;
 import com.dremio.service.users.SystemUser;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
