@@ -34,9 +34,8 @@ import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.util.io.pem.PemObject;
 
 import com.dremio.config.DremioConfig;
-import com.dremio.exec.rpc.ssl.SSLConfig;
 import com.dremio.exec.rpc.ssl.SSLConfigurator;
-import com.dremio.exec.server.SabotContext;
+import com.dremio.ssl.SSLConfig;
 import com.google.common.base.Preconditions;
 
 public final class SslHelper {

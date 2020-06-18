@@ -22,7 +22,7 @@
 
   <groupId>com.dremio.flight</groupId>
   <artifactId>dremio-flight-connector</artifactId>
-  <version>0.22.0-SNAPSHOT</version>
+  <version>0.23.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <!--
     Weirdly putting 1.0.0 here doesn't resolve the correct dependencies for dremio jars
@@ -39,17 +39,17 @@
 
     <!--
         Dependencies version for this module
-        Submodules should rely on dependencixesManagement as much as possible
+        Submodules should rely on dependenciesManagement as much as possible
     -->
-    <arrow.flight.version>1.0.0-20200327115344-e8784bde9c-dremio</arrow.flight.version>
-    <version.dremio>4.3.1-202005202256080999-5dcfb82a</version.dremio>
+    <arrow.flight.version>0.18.0-20200611130341-f4a85bd19b-dremio</arrow.flight.version>
+    <version.dremio>4.5.0-202006180205030236-1a5d28da</version.dremio>
     <junit.version>4.12</junit.version>
     <lilith.version>8.2.0</lilith.version>
     <slf4j.version>1.7.28</slf4j.version>
     <logback.version>1.2.3</logback.version>
     <protobuf.version>3.9.1</protobuf.version>
     <guava.version>28.1-jre</guava.version>
-    <netty.version>4.1.45.Final</netty.version>
+    <netty.version>4.1.48.Final</netty.version>
     <netty.boringssl.version>2.0.28.Final</netty.boringssl.version>
     <surefire.extra.argLine>-Ddremio.flight.ssl=true</surefire.extra.argLine>
 

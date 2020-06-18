@@ -37,6 +37,7 @@ import org.apache.arrow.flight.Location;
 import org.apache.arrow.flight.Result;
 import org.apache.arrow.flight.SchemaResult;
 import org.apache.arrow.flight.Ticket;
+import org.apache.arrow.memory.ArrowBuf;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.FieldVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
@@ -88,7 +89,6 @@ import com.google.common.collect.Lists;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import io.grpc.Status;
-import io.netty.buffer.ArrowBuf;
 import io.netty.buffer.ByteBufUtil;
 
 class Producer implements FlightProducer, AutoCloseable {

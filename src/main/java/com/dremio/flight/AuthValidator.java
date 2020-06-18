@@ -99,10 +99,10 @@ public class AuthValidator implements BasicServerAuthHandler.BasicAuthValidator 
 
   private UserSession build(String user, String password) {
     SessionOptionManager optionsManager =
-      new SessionOptionManagerFactoryImpl().getOrCreate("flight-session-" + user, context.getOptionManager());
+      new SessionOptionManagerFactoryImpl(context.getOptionValidatorListing()).getOrCreate("flight-session-" + user);
     return UserSession.Builder.newBuilder()
       .withCredentials(UserBitShared.UserCredentials.newBuilder().setUserName(user).build())
-      .withSessionOptionManager(optionsManager)
+      .withSessionOptionManager(optionsManager, context.getOptionManager())
       .withUserProperties(
         UserProtos.UserProperties.newBuilder().addProperties(
           UserProtos.Property.newBuilder().setKey("password").setValue(password).build()
