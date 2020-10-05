@@ -7,7 +7,7 @@
 ## Building and Installation
 
 1. In root directory with the pom.xml file run mvn clean install
-1. Take the resulting shaded jar `dremio-flight-connector-{VERSION}-shaded.jar` file in the target folder and put it in the \dremio\jars folder in Dremio
+1. Take the resulting shaded jar `dremio-flight-connector-{VERSION}.jar` file in the target folder and put it in the \dremio\jars folder in Dremio
 1. Restart Dremio
 
 ## Configuration
