@@ -1,7 +1,9 @@
 # Dremio Flight Connector
 ```diff
-- This connector is still being actively developed. We don't recommend this on production.
+- This repository is now retired. Fligth is a first class client connection in Dremio
 ```
+see https://docs.dremio.com/release-notes/49-release-notes.html#preview-arrow-flight for details
+
 [![Build Status](https://travis-ci.org/dremio-hub/dremio-flight-connector.svg?branch=master)](https://travis-ci.org/dremio-hub/dremio-flight-connector)
 
 ## Building and Installation
